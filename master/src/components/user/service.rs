@@ -36,7 +36,7 @@ pub async fn user_register(
     nickname: Set(nickname),
     email: Set(email),
     password: Set(hashed),
-    status: Set(user::UserStatus::Deleted),
+    status: Set(UserStatus::Active),
     created_at: Set(created_at),
     ..Default::default()
   };

@@ -2,6 +2,6 @@
 
 pub mod prelude;
 
-pub mod project;
-pub mod server;
+pub mod agent;
+pub mod site;
 pub mod user;

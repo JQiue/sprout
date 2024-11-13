@@ -2,28 +2,7 @@
 
 use sea_orm::entity::prelude::*;
 
-#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
-#[sea_orm(
-  rs_type = "String",
-  db_type = "String(StringLen::None)",
-  rename_all = "lowercase"
-)]
-pub enum UserStatus {
-  Active,  // 正常
-  Deleted, // 已删除
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
-#[sea_orm(
-  rs_type = "String",
-  db_type = "String(StringLen::None)",
-  rename_all = "lowercase"
-)]
-pub enum UserType {
-  Normal, // 普通用户
-  Vip,    // VIP用户
-  Admin,  // 管理员
-}
+use crate::components::user::model::{UserStatus, UserType};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
 #[sea_orm(table_name = "user")]

@@ -1,7 +1,33 @@
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
+use sea_orm::prelude::StringLen;
+use sea_orm::{
+  ColumnTrait, DatabaseConnection, DeriveActiveEnum, EntityTrait, EnumIter, QueryFilter,
+};
 use serde::Deserialize;
 
 use crate::entitys::{prelude::User, user};
+
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
+#[sea_orm(
+  rs_type = "String",
+  db_type = "String(StringLen::None)",
+  rename_all = "lowercase"
+)]
+pub enum UserStatus {
+  Active,  // 正常
+  Deleted, // 已删除
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
+#[sea_orm(
+  rs_type = "String",
+  db_type = "String(StringLen::None)",
+  rename_all = "lowercase"
+)]
+pub enum UserType {
+  Normal, // 普通用户
+  Vip,    // VIP用户
+  Admin,  // 管理员
+}
 
 #[derive(Deserialize, Clone)]
 pub struct UserRegisterBody {

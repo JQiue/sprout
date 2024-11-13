@@ -1,3 +1,4 @@
+use sea_orm::EnumIter;
 use sea_orm_migration::{prelude::*, schema::*};
 
 #[derive(DeriveIden)]
@@ -9,7 +10,7 @@ enum User {
   Password,
   Email,
   Type,
-  Status,
+  Status,              // active, deleted
   LastLoginAt,         // 最后登录时间
   LastLoginIp,         // 最后登录IP
   Avatar,              // 头像URL
@@ -21,14 +22,20 @@ enum User {
   DeletedAt, // 软删除时间
 }
 
+#[derive(Iden, EnumIter)]
+pub enum Status {
+  #[iden = "active"]
+  Active,
+  #[iden = "deleted"]
+  Deleted,
+}
+
 #[derive(DeriveMigrationName)]
 pub struct Migration;
 
 #[async_trait::async_trait]
 impl MigrationTrait for Migration {
   async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-    // Replace the sample below with your own migration scripts
-
     manager
       .create_table(
         Table::create()
@@ -56,8 +63,6 @@ impl MigrationTrait for Migration {
   }
 
   async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-    // Replace the sample below with your own migration scripts
-
     manager
       .drop_table(Table::drop().table(User::Table).to_owned())
       .await
