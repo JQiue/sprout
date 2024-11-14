@@ -12,6 +12,7 @@ use crate::{
   app::AppState,
   components::user::model::*,
   entitys::{prelude::User, user},
+  middleware::auth::JwtPayload,
   response::StatusCode,
 };
 
@@ -114,16 +115,12 @@ pub async fn user_login(
   };
 
   if matches {
-    #[derive(Serialize, Deserialize)]
-    struct Payload {
-      user_id: String,
-    }
     let token = jwt::sign(
-      Payload {
+      JwtPayload {
         user_id: model.user_id,
       },
       "sprout".to_owned(),
-      10,
+      86400,
     )
     .unwrap();
     Ok(json!({

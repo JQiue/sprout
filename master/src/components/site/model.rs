@@ -27,7 +27,6 @@ pub enum SiteType {
 
 #[derive(Deserialize)]
 pub struct CreateSiteBody {
-  pub user_id: String,
   pub site_type: SiteType,
   pub repo_url: Option<String>,
 }

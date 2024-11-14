@@ -1,3 +1,6 @@
+use std::fmt::Display;
+
+use actix_web::{error, HttpResponse};
 use serde::Serialize;
 
 /// 响应状态码枚举
@@ -55,7 +58,7 @@ impl StatusCode {
   }
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 pub struct Response<T> {
   pub code: i32,
   pub msg: String,
@@ -86,5 +89,11 @@ impl<T> Response<T> {
       msg,
       data: None,
     }
+  }
+}
+
+impl<T> Display for Response<T> {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, r#"{{ "code": {}, "msg": "{}" }}"#, self.code, self.msg)
   }
 }

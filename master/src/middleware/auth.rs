@@ -1,7 +1,14 @@
-use actix_web::{dev::ServiceRequest, error, App, Error};
+use actix_web::{dev::ServiceRequest, Error, HttpMessage, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
+use helpers::jwt;
+use serde::{Deserialize, Serialize};
 
-use crate::app::AppState;
+use crate::response::{Response, StatusCode};
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct JwtPayload {
+  pub user_id: String,
+}
 
 pub async fn validator(
   req: ServiceRequest,
@@ -12,8 +19,31 @@ pub async fn validator(
     return Ok(req);
   }
   let Some(credentials) = credentials else {
-    return Err((error::ErrorBadRequest("no bearer header"), req));
+    return Err((
+      actix_web::error::InternalError::from_response(
+        "Invalid token",
+        HttpResponse::Unauthorized()
+          .content_type("application/json")
+          .json(Response::<()>::error(StatusCode::Forbidden)),
+      )
+      .into(),
+      req,
+    ));
   };
-  println!("{credentials:?}");
-  Ok(req)
+  match jwt::verify::<JwtPayload>(credentials.token().to_owned(), "sprout".to_owned()) {
+    Ok(data) => {
+      req.extensions_mut().insert(data.claims.data);
+      Ok(req)
+    }
+    Err(_) => Err((
+      actix_web::error::InternalError::from_response(
+        "Invalid token",
+        HttpResponse::Unauthorized()
+          .content_type("application/json")
+          .json(Response::<()>::error(StatusCode::AuthFailed)),
+      )
+      .into(),
+      req,
+    )),
+  }
 }
