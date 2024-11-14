@@ -3,11 +3,11 @@ use sea_orm_migration::{prelude::*, schema::*};
 #[derive(DeriveIden)]
 enum Deployment {
   Table,
-  Id,
-  SiteId,  // 关联的站点ID
-  AgentId, // 执行部署的AgentID
-  Version,
-  Status,           // 部署状态：pending, building, published, failed
+  Id,               // 主键ID
+  SiteId,           // 关联的站点ID
+  AgentId,          // 执行部署的AgentID
+  Version,          // 版本号
+  Status,           // pending, building, published, failed
   StartedAt,        // 开始时间
   CompletedAt,      // 完成时间
   CommitHash,       // Git提交hash
@@ -17,8 +17,8 @@ enum Deployment {
   ErrorMessage,     // 错误信息
   DeployPreviewUrl, // 部署预览 URL
   BuildDuration,    // 构建时间
-  DeployedAt,
-  CreatedAt,
+  DeployedAt,       // 部署时间
+  CreatedAt,        // 创建时间
 }
 
 #[derive(DeriveMigrationName)]
@@ -32,22 +32,22 @@ impl MigrationTrait for Migration {
         Table::create()
           .table(Deployment::Table)
           .if_not_exists()
-          .col(pk_auto(Deployment::Id))
-          .col(string(Deployment::SiteId))
-          .col(string(Deployment::AgentId))
-          .col(string(Deployment::Version))
-          .col(string(Deployment::Status))
-          .col(string(Deployment::CommitHash))
-          .col(string(Deployment::CommitMessage))
-          .col(string(Deployment::Branch))
-          .col(string(Deployment::BuildLogs))
-          .col(string(Deployment::ErrorMessage))
-          .col(string(Deployment::DeployPreviewUrl))
-          .col(string(Deployment::BuildDuration))
-          .col(timestamp(Deployment::StartedAt))
-          .col(timestamp(Deployment::CompletedAt))
-          .col(timestamp(Deployment::DeployedAt))
-          .col(timestamp(Deployment::CreatedAt))
+          .col(pk_auto(Deployment::Id).comment("主键ID"))
+          .col(string(Deployment::SiteId).comment("关联的站点ID"))
+          .col(string(Deployment::AgentId).comment("执行部署的AgentID"))
+          .col(string(Deployment::Version).comment("版本号"))
+          .col(string(Deployment::Status).comment("部署状态: pending, building, published, failed"))
+          .col(string(Deployment::CommitHash).comment("Git 提交hash"))
+          .col(string(Deployment::CommitMessage).comment("提交信息"))
+          .col(string(Deployment::Branch).comment("构建分支"))
+          .col(string(Deployment::BuildLogs).comment("构建日志"))
+          .col(string(Deployment::ErrorMessage).comment("错误信息"))
+          .col(string(Deployment::DeployPreviewUrl).comment("部署预览 URL"))
+          .col(string(Deployment::BuildDuration).comment("构建时间"))
+          .col(timestamp(Deployment::StartedAt).comment("开始时间"))
+          .col(timestamp(Deployment::CompletedAt).comment("完成时间"))
+          .col(timestamp(Deployment::DeployedAt).comment("部署时间"))
+          .col(timestamp(Deployment::CreatedAt).comment("创建时间"))
           .to_owned(),
       )
       .await

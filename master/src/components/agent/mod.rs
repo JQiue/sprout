@@ -4,10 +4,10 @@ mod service;
 
 use actix_web::web::ServiceConfig;
 
-pub struct AgentComponent {}
+pub struct AgentComponent;
 
 impl AgentComponent {
   pub fn config(cfg: &mut ServiceConfig) {
-    cfg.service(handler::register_server);
+    cfg.service(handler::register_agent);
   }
 }

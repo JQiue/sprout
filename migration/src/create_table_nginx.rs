@@ -3,12 +3,12 @@ use sea_orm_migration::{prelude::*, schema::*};
 #[derive(DeriveIden)]
 enum Nginx {
   Table,
-  Id,
-  SiteId,
-  AgentId,
-  ConfigContent,
-  CreatedAt,
-  UpdatedAt,
+  Id,            // 主键ID
+  SiteId,        // 关联的站点ID
+  AgentId,       // 关联的AgentID
+  ConfigContent, // Nginx配置内容
+  CreatedAt,     // 创建时间
+  UpdatedAt,     // 更新时间
 }
 
 #[derive(DeriveMigrationName)]
@@ -25,9 +25,9 @@ impl MigrationTrait for Migration {
           .col(pk_auto(Nginx::Id))
           .col(string(Nginx::SiteId).unique_key().comment("站点 ID"))
           .col(string(Nginx::AgentId).unique_key().comment("Agent ID"))
-          .col(string(Nginx::ConfigContent))
-          .col(timestamp(Nginx::CreatedAt))
-          .col(timestamp_null(Nginx::UpdatedAt))
+          .col(string(Nginx::ConfigContent).comment("Nginx配置内容"))
+          .col(timestamp(Nginx::CreatedAt).comment("创建时间"))
+          .col(timestamp_null(Nginx::UpdatedAt).comment("更新时间"))
           .to_owned(),
       )
       .await

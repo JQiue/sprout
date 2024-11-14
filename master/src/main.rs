@@ -4,6 +4,7 @@ mod config;
 mod deployment;
 mod entitys;
 mod helpers;
+mod middleware;
 mod response;
 
 #[actix_web::main]

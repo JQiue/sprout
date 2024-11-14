@@ -10,12 +10,9 @@ use crate::{
   components::agent::{model::*, service},
 };
 
-#[post("/user")]
-pub async fn register_server(
-  state: Data<AppState>,
-  body: Json<RegisterServerBody>,
-) -> HttpResponse {
-  let Json(RegisterServerBody {
+#[post("/agent")]
+pub async fn register_agent(state: Data<AppState>, body: Json<RegisterAgentBody>) -> HttpResponse {
+  let Json(RegisterAgentBody {
     hostname,
     ip_address,
     storage_path,

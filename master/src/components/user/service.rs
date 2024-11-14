@@ -15,6 +15,27 @@ use crate::{
   response::StatusCode,
 };
 
+/// Registers a new user in the system.
+///
+/// This function creates a new user account with the provided details. It checks if the email
+/// is already in use, hashes the password, generates a unique user ID, and inserts the new user
+/// into the database.
+///
+/// # Parameters
+///
+/// * `state` - A reference to the application state, which includes the database connection.
+/// * `nickname` - The user's chosen nickname or display name.
+/// * `email` - The user's email address, which must be unique in the system.
+/// * `password` - The user's chosen password, which will be hashed before storage.
+///
+/// # Returns
+///
+/// Returns a `Result` which is:
+/// * `Ok(Value)` - A JSON object containing the `insert_id` of the newly created user if successful.
+/// * `Err(StatusCode)` - An error status code if registration fails. Possible errors include:
+///   - `UserExist` if the email is already registered
+///   - `HashPasswordError` if password hashing fails
+///   - `DbError` if there's an issue with the database operation
 pub async fn user_register(
   state: &AppState,
   nickname: String,
@@ -47,6 +68,23 @@ pub async fn user_register(
   }
 }
 
+///
+/// This function verifies the user's credentials and generates a JWT token upon successful authentication.
+///
+/// # Parameters
+///
+/// * `state` - A reference to the application state, which includes the database connection.
+/// * `email` - The email address of the user attempting to log in.
+/// * `password` - The password provided by the user for authentication.
+///
+/// # Returns
+///
+/// Returns a `Result` which is:
+/// * `Ok(Value)` - A JSON object containing the JWT token if authentication is successful.
+/// * `Err(StatusCode)` - An error status code if authentication fails. Possible errors include:
+///   - `UserNotExist` if the email is not registered
+///   - `DbError` if there's an issue with the database operation
+///   - `PasswordError` if the provided password is incorrect
 pub async fn user_login(
   state: &AppState,
   email: String,

@@ -1,6 +1,4 @@
 use actix_web::{
-  delete,
-  http::header::HeaderValue,
   post,
   web::{Data, Json},
   HttpResponse,
@@ -12,15 +10,15 @@ use crate::{
   components::site::{model::*, service},
 };
 
-#[post("/user")]
-pub async fn user_register(state: Data<AppState>, body: Json<UserRegisterBody>) -> HttpResponse {
-  let Json(UserRegisterBody {
-    email,
-    password,
-    display_name,
+#[post("/site")]
+pub async fn create_site(state: Data<AppState>, body: Json<CreateSiteBody>) -> HttpResponse {
+  let Json(CreateSiteBody {
+    user_id,
+    site_type,
+    repo_url,
   }) = body;
 
-  match service::user_register(&state).await {
+  match service::create_site(&state, user_id, site_type, repo_url).await {
     Ok(data) => HttpResponse::Ok().json(json!({
      "data": data,
      "errmsg": "",

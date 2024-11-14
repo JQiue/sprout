@@ -4,18 +4,18 @@ use sea_orm_migration::{prelude::*, schema::*};
 #[derive(DeriveIden)]
 enum Site {
   Table,
-  Id,
-  SiteId,
-  UserId,
+  Id,          // 主键ID
+  SiteId,      // 站点ID
+  UserId,      // 用户ID
   ServerId,    // 关联的服务器ID
   Name,        // 站点名称
   Domain,      // 主域名
   StorageUsed, // 存储使用量
   Status,      // 状态
-  Type,        // 站点类型：导入、模板、手动上传
+  Type,        // 站点类型：imported、template、manual
   RepoUrl,     // 代码仓库地址
-  CreatedAt,
-  UpdatedAt,
+  CreatedAt,   // 创建时间
+  UpdatedAt,   // 更新时间
 }
 
 #[derive(Iden, EnumIter)]
@@ -38,17 +38,17 @@ impl MigrationTrait for Migration {
           .table(Site::Table)
           .if_not_exists()
           .col(pk_auto(Site::Id))
-          .col(string(Site::SiteId))
-          .col(string(Site::UserId))
-          .col(integer(Site::ServerId))
-          .col(string(Site::Name))
-          .col(string(Site::Domain))
-          .col(integer(Site::StorageUsed))
-          .col(string(Site::Status).default("active"))
-          .col(string(Site::Type))
-          .col(string(Site::RepoUrl))
-          .col(timestamp(Site::CreatedAt))
-          .col(timestamp_null(Site::UpdatedAt))
+          .col(string(Site::SiteId).comment("站点ID"))
+          .col(string(Site::UserId).comment("用户ID"))
+          .col(integer(Site::ServerId).comment("关联的服务器ID"))
+          .col(string(Site::Name).comment("站点名称"))
+          .col(string(Site::Domain).comment("主域名"))
+          .col(integer(Site::StorageUsed).comment("存储使用量"))
+          .col(string(Site::Status).default("active").comment("状态"))
+          .col(string(Site::Type).comment("站点类型：imported、template、manual"))
+          .col(string(Site::RepoUrl).comment("代码仓库地址"))
+          .col(timestamp(Site::CreatedAt).comment("创建时间"))
+          .col(timestamp_null(Site::UpdatedAt).comment("更新时间"))
           .to_owned(),
       )
       .await
