@@ -1,7 +1,6 @@
 use actix_cors::Cors;
 use actix_web::{
-  dev::ServiceRequest,
-  error, middleware,
+  middleware,
   web::{self, ServiceConfig},
   App, HttpResponse, HttpServer,
 };

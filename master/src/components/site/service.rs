@@ -1,8 +1,6 @@
-use serde_json::{json, Value};
-
-use crate::app::AppState;
-
 use super::model::SiteType;
+use crate::{app::AppState, response::StatusCode};
+use serde_json::{json, Value};
 
 /// Creates a new site for a user.
 ///
@@ -22,7 +20,7 @@ pub async fn create_site(
   user_id: String,
   site_type: SiteType,
   repo_url: Option<String>,
-) -> Result<Value, String> {
+) -> Result<Value, StatusCode> {
   Ok(json! ({
     "data": {
       "verify": true
