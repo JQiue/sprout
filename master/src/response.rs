@@ -5,37 +5,40 @@ use serde::Serialize;
 /// 响应状态码枚举
 #[derive(Debug, Clone, Copy, Serialize)]
 pub enum StatusCode {
-  Success = 0, // 成功
-  // 客户端错误 (1000-1999)
+  /// 成功
+  Success = 0,
   /// 参数错误
   ParamError = 1000,
-  // 认证失败
+  /// 认证失败
   AuthFailed = 1001,
-  // 权限不足
+  /// 权限不足
   Forbidden = 1002,
-  // 资源不存在
-  NotFound = 1003,
-  // 数据验证失败
-  ValidationFailed = 1004,
-  // 请求频率限制
-  RequestLimit = 1005,
-  /// 服务端错误 (2000-2999)
-  // 服务器内部错误
+  /// 数据验证失败
+  ValidationFailed = 1003,
+  /// 服务器内部错误
   ServerError = 2000,
-  // 数据库错误
+  /// 数据库错误
   DbError = 2001,
-  // 哈希密码错误
+  /// 哈希密码错误
   HashPasswordError = 2002,
-  // 业务错误 (3000-3999)
-  // 用户不存在
-  UserNotExist = 3000,
-  // 用户已存在
-  UserExist = 3001,
-  // 密码错误
-  PasswordError = 3002,
-  // 余额不足
-  BalanceNotEnough = 3004,
-  // 第三方服务错误 (4000-4999)
+  /// 未实现的功能
+  NotImplemented = 3000,
+  /// 用户不存在
+  UserNotFound = 3001,
+  /// 用户已存在
+  UserExist = 3002,
+  /// 密码错误
+  PasswordError = 3003,
+  /// Agent 已存在
+  AgentExist = 3004,
+  /// Agent 不存在
+  AgentNotFound = 3005,
+  /// Deployment 不存在
+  DeploymentNotFound = 3006,
+  /// 发送 Agent 请求失败
+  SendAgentRequestError = 3007,
+  /// Agent 认证失败
+  AgentAuthFailed = 3008,
 }
 
 impl StatusCode {
@@ -45,16 +48,19 @@ impl StatusCode {
       StatusCode::ParamError => "参数错误",
       StatusCode::AuthFailed => "认证失败",
       StatusCode::Forbidden => "权限不足",
-      StatusCode::NotFound => "资源不存在",
       StatusCode::ValidationFailed => "数据验证失败",
-      StatusCode::RequestLimit => "请求过于频繁",
       StatusCode::ServerError => "服务器内部错误",
       StatusCode::DbError => "数据库错误",
-      StatusCode::UserNotExist => "用户不存在",
-      StatusCode::PasswordError => "密码错误",
-      StatusCode::BalanceNotEnough => "余额不足",
+      StatusCode::NotImplemented => "未实现的功能",
       StatusCode::UserExist => "用户已存在",
+      StatusCode::PasswordError => "密码错误",
       StatusCode::HashPasswordError => "生成哈希密码错误",
+      StatusCode::AgentNotFound => "找不到 Agent",
+      StatusCode::SendAgentRequestError => "发送 Agent 请求失败",
+      StatusCode::AgentExist => "Agent 已存在",
+      StatusCode::DeploymentNotFound => "Deployment 不存在",
+      StatusCode::UserNotFound => "用户不存在",
+      StatusCode::AgentAuthFailed => "Agent 认证失败",
     }
   }
 }

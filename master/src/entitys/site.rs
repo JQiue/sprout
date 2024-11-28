@@ -2,6 +2,8 @@
 
 use sea_orm::entity::prelude::*;
 
+use crate::components::site::model::SiteType;
+
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
 #[sea_orm(table_name = "site")]
 pub struct Model {
@@ -9,13 +11,13 @@ pub struct Model {
   pub id: i32,
   pub site_id: String,
   pub user_id: String,
-  pub server_id: i32,
+  pub server_id: Option<i32>,
   pub name: String,
-  pub domain: String,
+  pub domain: Option<String>,
   pub storage_used: i32,
-  #[sea_orm(column_type = "custom(\"enum_text\")")]
   pub status: String,
-  pub repo_url: String,
+  pub r#type: SiteType,
+  pub repo_url: Option<String>,
   pub created_at: DateTimeUtc,
   pub updated_at: Option<DateTimeUtc>,
 }

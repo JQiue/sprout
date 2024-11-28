@@ -11,6 +11,7 @@ enum Agent {
   Status,         // 服务器状态，online，offline，busy
   Tags,           // 服务器标签，用于分组
   LastHeartbeat,  // 上次心跳时间
+  Token,          // 注册时生成的 Token 用于 Master 进行验证
   CreatedAt,      // 首次注册时间
   UpdatedAt,      // 更新时间
 }
@@ -34,7 +35,8 @@ impl MigrationTrait for Migration {
           .col(string(Agent::StoragePath).comment("存储根路径"))
           .col(unsigned(Agent::AvailableSpace).comment("可用空间"))
           .col(string(Agent::Status).comment("服务器状态，online，offline，busy"))
-          .col(string(Agent::Tags).comment("服务器标签，用于分组"))
+          .col(string_null(Agent::Tags).comment("服务器标签，用于分组"))
+          .col(string(Agent::Token).comment("注册时生成的 Token 用于 Master 进行验证"))
           .col(timestamp(Agent::CreatedAt).comment("首次注册时间"))
           .col(timestamp_null(Agent::UpdatedAt).comment("更新时间"))
           .col(timestamp_null(Agent::LastHeartbeat).comment("上次心跳时间"))

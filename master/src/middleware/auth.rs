@@ -3,11 +3,15 @@ use actix_web_httpauth::extractors::bearer::BearerAuth;
 use helpers::jwt;
 use serde::{Deserialize, Serialize};
 
-use crate::response::{Response, StatusCode};
+use crate::{
+  components::user::model::UserType,
+  response::{Response, StatusCode},
+};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct JwtPayload {
   pub user_id: String,
+  pub user_type: UserType,
 }
 
 pub async fn validator(
@@ -15,7 +19,14 @@ pub async fn validator(
   credentials: Option<BearerAuth>,
 ) -> Result<ServiceRequest, (Error, ServiceRequest)> {
   let url = req.uri();
-  if url.to_string().eq("/api/token") || url.eq("/api/health") || url.eq("/api/user") {
+  let public_api = vec![
+    "/api/health",
+    "/api/user/token",
+    "/api/user",
+    "/api/deployment/status",
+  ];
+
+  if public_api.contains(&url.to_string().as_str()) {
     return Ok(req);
   }
   let Some(credentials) = credentials else {
@@ -30,6 +41,7 @@ pub async fn validator(
       req,
     ));
   };
+
   match jwt::verify::<JwtPayload>(credentials.token().to_owned(), "sprout".to_owned()) {
     Ok(data) => {
       req.extensions_mut().insert(data.claims.data);

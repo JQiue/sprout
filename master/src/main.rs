@@ -1,7 +1,6 @@
 mod app;
 mod components;
 mod config;
-mod deployment;
 mod entitys;
 mod helpers;
 mod middleware;

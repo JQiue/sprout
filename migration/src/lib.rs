@@ -16,7 +16,7 @@ impl MigratorTrait for Migrator {
       Box::new(create_table_agent::Migration),
       Box::new(create_table_site::Migration),
       // Box::new(create_table_nginx::Migration),
-      // Box::new(create_table_deployment::Migration),
+      Box::new(create_table_deployment::Migration),
     ]
   }
 }

@@ -8,16 +8,13 @@ enum Deployment {
   AgentId,          // 执行部署的AgentID
   Version,          // 版本号
   Status,           // pending, building, published, failed
-  StartedAt,        // 开始时间
-  CompletedAt,      // 完成时间
+  UploadToken,      // 上传 token
   CommitHash,       // Git提交hash
   CommitMessage,    // 提交信息
   Branch,           // 构建分支
   BuildLogs,        // 构建日志
-  ErrorMessage,     // 错误信息
   DeployPreviewUrl, // 部署预览 URL
-  BuildDuration,    // 构建时间
-  DeployedAt,       // 部署时间
+  ExecutionTime,    // 执行时间（可以存储多个时间点）
   CreatedAt,        // 创建时间
 }
 
@@ -34,19 +31,16 @@ impl MigrationTrait for Migration {
           .if_not_exists()
           .col(pk_auto(Deployment::Id).comment("主键ID"))
           .col(string(Deployment::SiteId).comment("关联的站点ID"))
-          .col(string(Deployment::AgentId).comment("执行部署的AgentID"))
-          .col(string(Deployment::Version).comment("版本号"))
+          .col(integer(Deployment::AgentId).comment("执行部署的AgentID"))
+          .col(string_null(Deployment::Version).comment("版本号"))
           .col(string(Deployment::Status).comment("部署状态: pending, building, published, failed"))
-          .col(string(Deployment::CommitHash).comment("Git 提交hash"))
-          .col(string(Deployment::CommitMessage).comment("提交信息"))
-          .col(string(Deployment::Branch).comment("构建分支"))
-          .col(string(Deployment::BuildLogs).comment("构建日志"))
-          .col(string(Deployment::ErrorMessage).comment("错误信息"))
-          .col(string(Deployment::DeployPreviewUrl).comment("部署预览 URL"))
-          .col(string(Deployment::BuildDuration).comment("构建时间"))
-          .col(timestamp(Deployment::StartedAt).comment("开始时间"))
-          .col(timestamp(Deployment::CompletedAt).comment("完成时间"))
-          .col(timestamp(Deployment::DeployedAt).comment("部署时间"))
+          .col(string_null(Deployment::CommitHash).comment("Git 提交hash"))
+          .col(string_null(Deployment::CommitMessage).comment("提交信息"))
+          .col(string_null(Deployment::Branch).comment("构建分支"))
+          .col(string_null(Deployment::BuildLogs).comment("构建日志"))
+          .col(string_null(Deployment::DeployPreviewUrl).comment("部署预览 URL"))
+          .col(string_null(Deployment::UploadToken).comment("上传 token"))
+          .col(timestamp(Deployment::ExecutionTime).comment("执行时间（可以存储多个时间点）"))
           .col(timestamp(Deployment::CreatedAt).comment("创建时间"))
           .to_owned(),
       )

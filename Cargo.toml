@@ -1,5 +1,5 @@
 [workspace]
-members = ["common", "master", "agent", "migration"]
+members = ["master", "agent", "migration"]
 
 [workspace.dependencies]
 actix-cors = "=0.7.0"
@@ -18,3 +18,6 @@ sea-orm = "=1.1.0"
 bcrypt = "=0.15.1"
 # helpers = "=0.2.0"
 helpers = { path = "../Projects/helpers" }
+reqwest = "=0.11.24"
+sysinfo = "=0.32.0"
+actix-multipart = "=0.7.2"
