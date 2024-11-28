@@ -210,6 +210,7 @@ impl NginxConfig {
   }
 }
 
+#[cfg(test)]
 mod test {
   use super::*;
   use std::path::Path;

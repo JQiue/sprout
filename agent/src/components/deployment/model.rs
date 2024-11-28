@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InitUploadBody {
-  site_id: String,
+  pub site_id: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

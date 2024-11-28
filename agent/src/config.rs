@@ -15,6 +15,8 @@ pub struct Config {
   pub agent_id: u8,
   pub storage_path: String,
   pub master_url: String,
+  pub upload_token_key: String,
+  pub upload_token_key_expire: i64,
 }
 
 impl Config {

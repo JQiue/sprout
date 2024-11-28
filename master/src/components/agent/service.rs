@@ -29,8 +29,12 @@ pub async fn register_agent(
     return Err(StatusCode::AgentExist);
   }
 
-  let token =
-    sign::<String>("data".to_owned(), "key".to_owned(), 10).map_err(|_| StatusCode::ServerError)?;
+  let token = sign::<String>(
+    hostname.to_owned(),
+    state.register_agent_key.clone(),
+    state.register_agent_key_expire,
+  )
+  .map_err(|_| StatusCode::ServerError)?;
 
   let model = agent::ActiveModel {
     hostname: Set(hostname),
@@ -73,8 +77,12 @@ pub async fn refresh_agent_token(
     return Err(StatusCode::AgentNotFound);
   }
 
-  let token = sign::<String>("data".to_owned(), "agent_key".to_owned(), 18000)
-    .map_err(|_| StatusCode::ServerError)?;
+  let token = sign::<String>(
+    agent_id.to_string(),
+    state.register_agent_key.to_owned(),
+    state.register_agent_key_expire,
+  )
+  .map_err(|_| StatusCode::ServerError)?;
 
   agent::ActiveModel {
     id: Set(agent_id),

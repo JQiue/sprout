@@ -13,6 +13,8 @@ pub struct Config {
   pub host: String,
   pub port: u16,
   pub database_url: String,
+  pub register_agent_key: String,
+  pub register_agent_key_expire: i64,
 }
 
 impl Config {

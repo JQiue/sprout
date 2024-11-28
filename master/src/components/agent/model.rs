@@ -91,7 +91,7 @@ pub struct GetAgentHeartBeatJson {
 }
 
 pub async fn get_agent_heartbeat(agent_ip: String) -> Result<GetAgentHeartBeatJson, String> {
-  let resp = reqwest::get(format!("http://{agent_ip}:5001/api/heartbeat"))
+  let resp = reqwest::get(format!("http://{agent_ip}/api/heartbeat"))
     .await
     .map_err(|_| "发送请求失败".to_string())?;
 

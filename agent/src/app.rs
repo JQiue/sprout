@@ -15,6 +15,8 @@ pub struct AppState {
   pub agent_id: u8,
   pub storage_path: String,
   pub master_url: String,
+  pub upload_token_key: String,
+  pub upload_token_key_expire: i64,
 }
 
 async fn health_check() -> HttpResponse {
@@ -36,6 +38,8 @@ pub async fn start() -> anyhow::Result<()> {
     agent_id: app_config.agent_id,
     storage_path: app_config.storage_path,
     master_url: app_config.master_url,
+    upload_token_key: app_config.upload_token_key,
+    upload_token_key_expire: app_config.upload_token_key_expire,
   };
   HttpServer::new(move || {
     let cors = Cors::permissive();

@@ -19,6 +19,8 @@ use crate::{
 #[derive(Debug, Clone)]
 pub struct AppState {
   pub db: DatabaseConnection,
+  pub register_agent_key: String,
+  pub register_agent_key_expire: i64,
 }
 
 async fn health_check() -> HttpResponse {
@@ -42,9 +44,14 @@ pub async fn start() -> anyhow::Result<()> {
   let app_config = Config::from_env()?;
   let db = Database::connect(app_config.database_url).await?;
   db.ping().await?;
+  let state = AppState {
+    db,
+    register_agent_key: app_config.register_agent_key,
+    register_agent_key_expire: app_config.register_agent_key_expire,
+  };
   HttpServer::new(move || {
     App::new()
-      .app_data(web::Data::new(AppState { db: db.clone() }))
+      .app_data(web::Data::new(state.clone()))
       .wrap(HttpAuthentication::with_fn(validator))
       .wrap(middleware::Logger::default())
       .wrap(Cors::permissive())

@@ -65,7 +65,7 @@ pub async fn init_upload_session(
 ) -> Result<InitUploadBody, StatusCode> {
   let agent = get_agent(deployment.agent_id, db).await?;
   let resp = reqwest::Client::new()
-    .post(format!("http://{}:5001/api/upload/init", agent.ip_address))
+    .post(format!("http://{}/api/upload/init", agent.ip_address))
     .timeout(Duration::from_secs(3))
     .json(&json!({
       "site_id": deployment.site_id,

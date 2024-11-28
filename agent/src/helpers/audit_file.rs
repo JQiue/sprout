@@ -117,14 +117,11 @@ pub fn load_keywords_from_files(file_paths: &[&str]) -> Result<Vec<String>, std:
   Ok(keywords)
 }
 
-pub fn test() -> Result<(), Box<dyn std::error::Error>> {
-  Ok(())
-}
-
+#[cfg(test)]
 mod test {
-  use std::{path::Path, time::Instant};
+  use std::time::Instant;
 
-  use crate::helpers::audit_file::{audit_directory, load_keywords_from_files};
+  use super::*;
 
   #[test]
   pub fn test() {

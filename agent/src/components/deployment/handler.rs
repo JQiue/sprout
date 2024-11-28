@@ -16,7 +16,8 @@ use crate::{
 
 #[post("/upload/init")]
 pub async fn init_upload(state: Data<AppState>, body: Json<InitUploadBody>) -> HttpResponse {
-  match service::init_upload(&state).await {
+  let Json(InitUploadBody { site_id }) = body;
+  match service::init_upload(&state, site_id).await {
     Ok(data) => HttpResponse::Ok().json(Response::success(data)),
     Err(err) => HttpResponse::Ok().json(Response::<()>::error(err)),
   }
