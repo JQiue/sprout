@@ -42,10 +42,9 @@ pub async fn start() -> anyhow::Result<()> {
     upload_token_key_expire: app_config.upload_token_key_expire,
   };
   HttpServer::new(move || {
-    let cors = Cors::permissive();
     App::new()
       .app_data(web::Data::new(state.clone()))
-      .wrap(cors)
+      .wrap(Cors::permissive())
       .wrap(middleware::Logger::default())
       .configure(config_app)
   })

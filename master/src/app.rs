@@ -58,6 +58,8 @@ pub async fn start() -> anyhow::Result<()> {
       .configure(config_app)
   })
   .bind((app_config.host, app_config.port))?
+  .bind(("localhost", app_config.port))?
+  .bind(("192.168.5.13", app_config.port))?
   .workers(app_config.workers)
   .run()
   .await

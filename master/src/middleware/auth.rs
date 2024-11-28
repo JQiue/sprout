@@ -1,4 +1,4 @@
-use actix_web::{dev::ServiceRequest, Error, HttpMessage, HttpResponse};
+use actix_web::{dev::ServiceRequest, error::InternalError, Error, HttpMessage, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use helpers::jwt;
 use serde::{Deserialize, Serialize};
@@ -31,8 +31,8 @@ pub async fn validator(
   }
   let Some(credentials) = credentials else {
     return Err((
-      actix_web::error::InternalError::from_response(
-        "Invalid token",
+      InternalError::from_response(
+        "未携带 token",
         HttpResponse::Unauthorized()
           .content_type("application/json")
           .json(Response::<()>::error(StatusCode::Forbidden)),
@@ -48,7 +48,7 @@ pub async fn validator(
       Ok(req)
     }
     Err(_) => Err((
-      actix_web::error::InternalError::from_response(
+      InternalError::from_response(
         "Invalid token",
         HttpResponse::Unauthorized()
           .content_type("application/json")

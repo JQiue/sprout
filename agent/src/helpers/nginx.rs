@@ -189,24 +189,37 @@ impl NginxConfig {
     config.push_str("}\n");
     config
   }
-  pub fn deploy(&self, config_path: &Path) -> io::Result<()> {
+  pub fn deploy(&self, config_path: &Path) -> bool {
     // 创建配置文件
     let config_content = self.generate_config();
-    fs::write(
+    if !fs::write(
       config_path.join(format!("{}.conf", self.domain)),
       config_content,
-    )?;
+    )
+    .map_err(|_| {
+      tracing::error!("{}", "write Nginx configuration failed");
+    })
+    .is_ok()
+    {
+      return false;
+    }
 
     // 测试配置是否有效
-    if !Command::new("nginx").arg("-t").status()?.success() {
-      return Err(io::Error::new(
-        io::ErrorKind::Other,
-        "Nginx configuration test failed",
-      ));
+    if !Command::new("nginx").arg("-t").status().is_ok() {
+      tracing::error!("{}", "Nginx configuration test failed");
+      return false;
     }
     // 重新加载 Nginx
-    Command::new("nginx").arg("-s").arg("reload").status()?;
-    Ok(())
+    if !Command::new("nginx")
+      .arg("-s")
+      .arg("reload")
+      .status()
+      .is_ok()
+    {
+      tracing::error!("{}", "reload Nginx failed");
+      return false;
+    }
+    true
   }
 }
 

@@ -33,7 +33,7 @@ pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, St
     state.upload_token_key.to_owned(),
   )
   .map_err(|error| {
-    println!("{:?}", error);
+    tracing::error!("{}", error);
     StatusCode::UploadTokenError
   })?;
 
@@ -82,8 +82,9 @@ pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, St
   let domain = generate_domain();
   // create_nginx_server_80(domain);
   let nginx_config = NginxConfig::new(domain, base_dir.to_string_lossy().to_string(), false, None);
-  nginx_config
-    .deploy(Path::new("/etc/nginx/sprout"))
-    .map_err(|_| StatusCode::DeployError)?;
-  Ok(json!({}))
+  if nginx_config.deploy(Path::new("/etc/nginx/sprout")) {
+    Ok(json!({}))
+  } else {
+    Err(StatusCode::DeployError)
+  }
 }
