@@ -80,8 +80,16 @@ pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, St
   }
   // 申请测试域名
   let domain = generate_domain();
-  // create_nginx_server_80(domain);
-  let nginx_config = NginxConfig::new(domain, base_dir.to_string_lossy().to_string(), false, None);
+  let nginx_root_path = base_dir
+    .canonicalize()
+    .map_err(|_| StatusCode::FileSystemError)?;
+  println!("{:?}", nginx_root_path);
+  let nginx_config = NginxConfig::new(
+    domain,
+    nginx_root_path.to_string_lossy().to_string(),
+    false,
+    None,
+  );
   if nginx_config.deploy(Path::new("/etc/nginx/sprout")) {
     Ok(json!({}))
   } else {

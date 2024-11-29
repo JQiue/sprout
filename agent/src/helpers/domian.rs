@@ -1,3 +1,3 @@
 pub fn generate_domain() -> String {
-  return "".to_string();
+  return "192.168.5.12".to_string();
 }

@@ -192,6 +192,13 @@ impl NginxConfig {
   pub fn deploy(&self, config_path: &Path) -> bool {
     // 创建配置文件
     let config_content = self.generate_config();
+
+    // 暂时简单写入，以后替换为原子接入
+    if let Err(e) = fs::create_dir_all(config_path) {
+      tracing::error!("Failed to create config directory: {}", e);
+      return false;
+    }
+
     if !fs::write(
       config_path.join(format!("{}.conf", self.domain)),
       config_content,
