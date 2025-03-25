@@ -5,12 +5,18 @@ use actix_web::{
   App, HttpResponse, HttpServer,
 };
 
-use crate::config::Config;
+use crate::{
+  components::{deployment::DeploymentComponent, heartbeat::HeartbeatComponent},
+  config::Config,
+};
 
 #[derive(Debug, Clone)]
 pub struct AppState {
-  server_id: u8,
-  storage_path: String,
+  pub agent_id: u8,
+  pub storage_path: String,
+  pub master_url: String,
+  pub upload_token_key: String,
+  pub upload_token_key_expire: i64,
 }
 
 async fn health_check() -> HttpResponse {
@@ -18,20 +24,27 @@ async fn health_check() -> HttpResponse {
 }
 
 pub fn config_app(cfg: &mut ServiceConfig) {
-  cfg.service(web::scope("/api").route("/health", web::get().to(health_check)));
+  cfg.service(
+    web::scope("/api")
+      .configure(HeartbeatComponent::config)
+      .configure(DeploymentComponent::config)
+      .route("/health", web::get().to(health_check)),
+  );
 }
 
 pub async fn start() -> anyhow::Result<()> {
-  let app_config = Config::from_env()?;
+  let app_config = Config::from_env();
   let state = AppState {
-    server_id: app_config.server_id,
+    agent_id: app_config.agent_id,
     storage_path: app_config.storage_path,
+    master_url: app_config.master_url,
+    upload_token_key: app_config.upload_token_key,
+    upload_token_key_expire: app_config.upload_token_key_expire,
   };
   HttpServer::new(move || {
-    let cors = Cors::permissive();
     App::new()
       .app_data(web::Data::new(state.clone()))
-      .wrap(cors)
+      .wrap(Cors::permissive())
       .wrap(middleware::Logger::default())
       .configure(config_app)
   })

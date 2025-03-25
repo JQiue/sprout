@@ -12,15 +12,17 @@ pub struct Config {
   pub workers: usize,
   pub host: String,
   pub port: u16,
-  pub server_id: u8,
+  pub agent_id: u8,
   pub storage_path: String,
   pub master_url: String,
+  pub upload_token_key: String,
+  pub upload_token_key_expire: i64,
 }
 
 impl Config {
-  pub fn from_env() -> anyhow::Result<Config> {
+  pub fn from_env() -> Config {
     // dotenvy::dotenv_override().ok();
-    dotenvy::from_filename("agent.env");
-    envy::from_env().map_err(anyhow::Error::from)
+    dotenvy::from_filename("agent.env").unwrap();
+    envy::from_env().unwrap()
   }
 }

@@ -2,7 +2,6 @@ use std::{
   fs::{self, File},
   io::{self, BufRead, BufReader},
   path::{Path, PathBuf},
-  time::Instant,
 };
 
 use aho_corasick::AhoCorasick;
@@ -31,9 +30,6 @@ pub struct FileInfo {
 }
 
 pub fn audit_file(file_path: &Path, keywords: &[String]) -> Result<Vec<usize>, std::io::Error> {
-  // 创建正则表达式模式
-  // let pattern = keywords.join("|");
-  // let re = Regex::new(&pattern).unwrap();
   let ac = AhoCorasick::new(keywords).unwrap();
   // 打开文件
   let file = File::open(file_path)?;
@@ -46,15 +42,30 @@ pub fn audit_file(file_path: &Path, keywords: &[String]) -> Result<Vec<usize>, s
     if ac.find(&line).is_some() {
       matches.push(index + 1);
     }
-    // if re.is_match(&line) {
-    //   matches.push(index + 1);
-    //   //   matches.push((index + 1, line));
-    // }
   }
 
   Ok(matches)
 }
 
+/// Audits a directory for files containing specified keywords.
+///
+/// This function recursively traverses the given directory and its subdirectories,
+/// checking each file for the presence of specified keywords. It collects information
+/// about files that contain matches.
+///
+/// # Parameters
+///
+/// * `dir` - A reference to a `Path` representing the directory to audit.
+/// * `keywords` - A slice of `String`s containing the keywords to search for in each file.
+///
+/// # Returns
+///
+/// * `io::Result<Vec<FileInfo>>` - A Result containing either:
+///   - `Ok(Vec<FileInfo>)`: A vector of `FileInfo` structs, each representing a file
+///     that contains at least one of the specified keywords. The `FileInfo` includes
+///     the file path and the line numbers where matches were found.
+///   - `Err(std::io::Error)`: An I/O error if directory traversal or file reading fails.
+///
 pub fn audit_directory(dir: &Path, keywords: &[String]) -> io::Result<Vec<FileInfo>> {
   let mut results = Vec::new();
   let keywords = keywords.to_vec(); // 克隆关键词列表以满足闭包的生命周期要求
@@ -75,32 +86,56 @@ pub fn audit_directory(dir: &Path, keywords: &[String]) -> io::Result<Vec<FileIn
   Ok(results)
 }
 
-pub fn test() -> Result<(), Box<dyn std::error::Error>> {
-  let file1 = File::open(Path::new("./涉枪涉爆违法信息关键词.txt"))?;
-  let reader1 = BufReader::new(file1);
-  let mut keywords = vec![];
-  for (_index, line) in reader1.lines().enumerate() {
-    let line = line?;
-    keywords.push(line.clone());
+/// Loads keywords from multiple files into a vector of strings.
+///
+/// This function reads each file specified in the input array, extracts non-empty lines,
+/// and collects them into a single vector of keywords.
+///
+/// # Parameters
+///
+/// * `file_paths` - A slice of string slices, where each string is a path to a file containing keywords.
+///
+/// # Returns
+///
+/// * `Result<Vec<String>, std::io::Error>` - A Result containing either:
+///   - `Ok(Vec<String>)`: A vector of strings, where each string is a non-empty line (trimmed) from the input files.
+///   - `Err(std::io::Error)`: An I/O error if file reading fails.
+///
+pub fn load_keywords_from_files(file_paths: &[&str]) -> Result<Vec<String>, std::io::Error> {
+  let mut keywords = Vec::new();
+  for &file_path_str in file_paths {
+    let file_path = Path::new(file_path_str);
+    println!("{:?}", file_path);
+    let reader = BufReader::new(File::open(file_path)?);
+    for line_result in reader.lines() {
+      let line = line_result?;
+      if !line.trim().is_empty() {
+        keywords.push(line.trim().to_string());
+      }
+    }
   }
-  let file2 = File::open(Path::new("./色情类.txt"))?;
-  let reader2 = BufReader::new(file2);
-  for (_index, line) in reader2.lines().enumerate() {
-    let line = line?;
-    keywords.push(line.clone());
-  }
-  let file3 = File::open(Path::new("./政治类.txt"))?;
-  let reader3 = BufReader::new(file3);
-  for (_index, line) in reader3.lines().enumerate() {
-    let line = line?;
-    keywords.push(line.clone());
-  }
-  println!("keywords len: {}", keywords.len());
-  let start = Instant::now();
-  let res = audit_directory(Path::new("./dist"), &keywords).unwrap();
-  let duration = start.elapsed();
-  println!("duration：{}s", duration.as_secs_f32());
-  println!("{:#?}, len: {}", res, res.len());
+  Ok(keywords)
+}
 
-  Ok(())
+#[cfg(test)]
+mod test {
+  use std::time::Instant;
+
+  use super::*;
+
+  #[test]
+  pub fn test() {
+    let keywords = load_keywords_from_files(&vec![
+      "./涉枪涉爆违法信息关键词.txt",
+      "./色情类.txt",
+      "./政治类.txt",
+    ])
+    .unwrap();
+    println!("keywords len: {}", keywords.len());
+    let start = Instant::now();
+    let res = audit_directory(Path::new("./dist"), &keywords).unwrap();
+    let duration = start.elapsed();
+    println!("duration：{}s", duration.as_secs_f32());
+    println!("{:#?}, len: {}", res, res.len());
+  }
 }

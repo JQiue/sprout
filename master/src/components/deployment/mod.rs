@@ -1,14 +1,14 @@
 mod handler;
-mod model;
+pub mod model;
 mod service;
 
 use actix_web::web::ServiceConfig;
 
-pub struct DeploymentComponent {}
+pub struct DeploymentComponent;
 
 impl DeploymentComponent {
   pub fn config(cfg: &mut ServiceConfig) {
-    cfg.service(handler::user_register);
-    cfg.service(handler::user_login);
+    cfg.service(handler::get_deployment_info);
+    cfg.service(handler::update_deployment_status);
   }
 }

@@ -1,28 +1,45 @@
+use helpers::time::utc_now;
+use sea_orm::{ActiveModelTrait, DatabaseConnection, Set};
 use serde_json::{json, Value};
 
-use crate::app::AppState;
+use crate::{
+  app::AppState, components::agent::model::get_agent, entities::deployment, response::StatusCode,
+};
 
-pub async fn user_register(
+use super::model::{get_deployment, has_deployment, DeploymentQueryBy, DeploymentStatus};
+
+pub async fn get_deployment_info(
   state: &AppState,
-  display_name: String,
-  email: String,
-  password: String,
-) -> Result<Value, String> {
-  Ok(json! ({
-    "data": {
-      "verify": true
-    }
-  }))
+  deployment_id: i32,
+) -> Result<Value, StatusCode> {
+  let deployment = get_deployment(DeploymentQueryBy::Id(deployment_id), &state.db).await?;
+  Ok(json!(deployment))
 }
 
-pub async fn user_login(
-  state: &AppState,
-  email: String,
-  password: String,
-) -> Result<Value, String> {
-  Err("to do".to_string())
-}
-
-pub async fn user_logout() -> Result<Value, String> {
-  Err("to do".to_string())
+pub async fn update_deployment_status(
+  agent_id: i32,
+  agent_token: String,
+  deployment_id: i32,
+  status: DeploymentStatus,
+  db: &DatabaseConnection,
+) -> Result<Value, StatusCode> {
+  let agent = get_agent(agent_id, db).await?;
+  if agent.token != agent_token {
+    return Err(StatusCode::AgentAuthFailed);
+  }
+  if !has_deployment(super::model::DeploymentQueryBy::Id(deployment_id), db).await? {
+    return Err(StatusCode::DeploymentNotFound);
+  }
+  helpers::jwt::verify::<String>(agent_token, "agent_key".to_owned())
+    .map_err(|_| StatusCode::AuthFailed)?;
+  let model = deployment::ActiveModel {
+    id: Set(deployment_id),
+    status: Set(status),
+    execution_time: Set(utc_now()),
+    ..Default::default()
+  }
+  .update(db)
+  .await
+  .map_err(|_| StatusCode::DbError)?;
+  Ok(json!(model))
 }

@@ -1,6 +1,7 @@
 //! config
 
 use serde::Deserialize;
+use tracing::error;
 
 fn default_workers() -> usize {
   1
@@ -13,11 +14,20 @@ pub struct Config {
   pub host: String,
   pub port: u16,
   pub database_url: String,
+  pub login_token_key: String,
+  pub register_agent_key: String,
+  pub register_agent_key_expire: i64,
+  pub cloudflare_api_key: String,
+  pub cloudflare_email: String,
+  pub cloudflare_zone_id: String,
 }
 
 impl Config {
   pub fn from_env() -> anyhow::Result<Config> {
     dotenvy::dotenv_override().ok();
-    envy::from_env().map_err(anyhow::Error::from)
+    envy::from_env().map_err(|error| {
+      error!("{}", error);
+      anyhow::Error::from(error)
+    })
   }
 }
