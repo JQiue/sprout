@@ -2,7 +2,8 @@ use std::{fs, io, path::Path, process::Command};
 
 use serde::{Deserialize, Serialize};
 
-pub fn visit_dirs<F>(dir: &Path, callback: &mut F) -> io::Result<()>
+// 遍历目录下的所有文件和子目录，并对每个文件调用回调函数
+fn visit_dirs<F>(dir: &Path, callback: &mut F) -> io::Result<()>
 where
   F: FnMut(&Path) -> io::Result<()>,
 {

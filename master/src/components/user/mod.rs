@@ -8,6 +8,7 @@ pub struct UserComponent;
 
 impl UserComponent {
   pub fn config(cfg: &mut ServiceConfig) {
+    cfg.service(handler::generate_casual_user);
     cfg.service(handler::user_register);
     cfg.service(handler::user_login);
     cfg.service(handler::get_user_info);

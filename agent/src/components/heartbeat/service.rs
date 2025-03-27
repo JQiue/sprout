@@ -1,9 +1,9 @@
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use sysinfo::{CpuRefreshKind, RefreshKind};
 
-use crate::{app::AppState, response::StatusCode};
+use crate::{app::AppState, error::AppError};
 
-pub async fn heartbeat(_state: &AppState) -> Result<Value, StatusCode> {
+pub async fn heartbeat(_state: &AppState) -> Result<Value, AppError> {
   let mut s =
     sysinfo::System::new_with_specifics(RefreshKind::new().with_cpu(CpuRefreshKind::everything()));
   // Wait a bit because CPU usage is based on diff.

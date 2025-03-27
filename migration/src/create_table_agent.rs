@@ -12,7 +12,7 @@ enum Agent {
   Tags,           // 服务器标签，用于分组
   LastHeartbeat,  // 上次心跳时间
   Token,          // 注册时生成的 Token 用于 Master 进行验证
-  CreatedAt,      // 首次注册时间
+  CreatedAt,      // 创建时间
   UpdatedAt,      // 更新时间
 }
 
@@ -29,7 +29,7 @@ impl MigrationTrait for Migration {
         Table::create()
           .table(Agent::Table)
           .if_not_exists()
-          .col(pk_auto(Agent::Id))
+          .col(pk_auto(Agent::Id).unsigned())
           .col(string(Agent::Hostname).comment("主机名"))
           .col(string(Agent::IpAddress).comment("IP 地址"))
           .col(string(Agent::StoragePath).comment("存储根路径"))

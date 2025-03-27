@@ -1,7 +1,8 @@
 //! config
 
 use serde::Deserialize;
-use tracing::error;
+
+use crate::error::AppError;
 
 fn default_workers() -> usize {
   1
@@ -23,11 +24,8 @@ pub struct Config {
 }
 
 impl Config {
-  pub fn from_env() -> anyhow::Result<Config> {
+  pub fn from_env() -> Result<Config, AppError> {
     dotenvy::dotenv_override().ok();
-    envy::from_env().map_err(|error| {
-      error!("{}", error);
-      anyhow::Error::from(error)
-    })
+    Ok(envy::from_env::<Config>()?)
   }
 }

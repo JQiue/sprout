@@ -1,10 +1,11 @@
-use crate::entities::agent;
-use crate::response::StatusCode;
+use entity::agent;
 use sea_orm::prelude::StringLen;
 use sea_orm::{
   ColumnTrait, DatabaseConnection, DeriveActiveEnum, EntityTrait, EnumIter, QueryFilter,
 };
 use serde::{Deserialize, Serialize};
+
+use crate::error::AppError;
 
 #[derive(Serialize, Deserialize)]
 pub struct RegisterAgentBody {
@@ -12,7 +13,7 @@ pub struct RegisterAgentBody {
   pub ip_address: String,
   pub storage_path: String,
   pub available_space: u32,
-  pub status: AgentStatus,
+  pub status: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
@@ -28,49 +29,38 @@ pub enum AgentStatus {
   Busy,
 }
 
-pub async fn get_agent(agent_id: i32, db: &DatabaseConnection) -> Result<agent::Model, StatusCode> {
+pub async fn get_agent(agent_id: u32, db: &DatabaseConnection) -> Result<agent::Model, AppError> {
   agent::Entity::find()
     .filter(agent::Column::Id.eq(agent_id))
     .one(db)
-    .await
-    .map_err(|_| StatusCode::DbError)?
-    .ok_or(StatusCode::AgentNotFound)
+    .await?
+    .ok_or(AppError::AgentNotFound)
 }
 
-pub async fn get_avaliable_agent(db: &DatabaseConnection) -> Result<agent::Model, StatusCode> {
+pub async fn get_avaliable_agent(db: &DatabaseConnection) -> Result<agent::Model, AppError> {
   agent::Entity::find()
     .filter(agent::Column::Status.eq(AgentStatus::Online))
     .one(db)
-    .await
-    .map_err(|_| StatusCode::DbError)?
-    .ok_or(StatusCode::AgentNotFound)
+    .await?
+    .ok_or(AppError::AgentNotFound)
 }
 
 pub enum AgentQueryBy {
-  Id(i32),
+  Id(u32),
   Hostname(String),
   IpAddress(String),
 }
 
-pub async fn has_agent(
-  query_by: AgentQueryBy,
-  db: &DatabaseConnection,
-) -> Result<bool, StatusCode> {
+pub async fn has_agent(query_by: AgentQueryBy, db: &DatabaseConnection) -> Result<bool, AppError> {
   let mut query = agent::Entity::find();
   match query_by {
     AgentQueryBy::Id(id) => query = query.filter(agent::Column::Id.eq(id)),
-    AgentQueryBy::Hostname(hostname) => query = query.filter(agent::Column::Hostname.eq(hostname)),
+    AgentQueryBy::Hostname(hostname) => query = query.filter(agent::Column::Hostname.eq(&hostname)),
     AgentQueryBy::IpAddress(ip_address) => {
-      query = query.filter(agent::Column::IpAddress.eq(ip_address))
+      query = query.filter(agent::Column::IpAddress.eq(&ip_address))
     }
   }
-  Ok(
-    query
-      .one(db)
-      .await
-      .map_err(|_| StatusCode::DbError)?
-      .is_some(),
-  )
+  Ok(query.one(db).await?.is_some())
 }
 
 #[derive(Serialize, Deserialize)]
@@ -83,19 +73,19 @@ pub struct AgentHeartbeat {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct GetAgentHeartBeatJson {
+pub struct RpcCallData {
   pub code: i32,
   pub msg: String,
   pub data: AgentHeartbeat,
 }
 
-pub async fn get_agent_heartbeat(agent_ip: String) -> Result<GetAgentHeartBeatJson, String> {
+pub async fn get_agent_heartbeat(agent_ip: String) -> Result<RpcCallData, AppError> {
   let resp = reqwest::get(format!("http://{agent_ip}/api/heartbeat"))
     .await
-    .map_err(|_| "发送请求失败".to_string())?;
-
-  resp
-    .json::<GetAgentHeartBeatJson>()
+    .map_err(|_| AppError::RpcCallError)?;
+  let data = resp
+    .json::<RpcCallData>()
     .await
-    .map_err(|_| "响应体序列化失败".to_string())
+    .map_err(|_| AppError::RpcCallError)?;
+  Ok(data)
 }

@@ -11,6 +11,7 @@ enum Site {
   Name,      // 站点名称
   Domain,    // 主域名
   Status,    // 状态：active，disabled
+  Type,      // 站点类型：Preview
   CreatedAt, // 创建时间
   UpdatedAt, // 更新时间
 }
@@ -45,6 +46,7 @@ impl MigrationTrait for Migration {
           .col(string(Site::Name).comment("站点名称"))
           .col(string_null(Site::Domain).comment("绑定域名"))
           .col(string(Site::Status).default("active").comment("状态"))
+          .col(string(Site::Type).comment("站点类型：imported、template、manual"))
           .col(timestamp(Site::CreatedAt).comment("创建时间"))
           .col(timestamp_null(Site::UpdatedAt).comment("更新时间"))
           .to_owned(),

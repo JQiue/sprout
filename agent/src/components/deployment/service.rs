@@ -1,58 +1,42 @@
 use std::{fs, path::Path};
 
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 use crate::{
   app::AppState,
-  helpers::{
-    audit_file::{audit_directory, load_keywords_from_files},
-    domian::generate_domain,
-    nginx::NginxConfig,
-  },
-  response::StatusCode,
+  error::AppError,
+  helpers::{domian::generate_domain, nginx::NginxConfig},
 };
 use helpers::{self, jwt};
 
-use super::model::{is_safe_path, UploadForm};
+use super::model::UploadForm;
 
-pub async fn init_upload(state: &AppState, site_id: String) -> Result<Value, StatusCode> {
-  let token = jwt::sign(
+pub async fn init_upload(state: &AppState, site_id: String) -> Result<Value, AppError> {
+  let upload_token = jwt::sign(
     site_id,
-    state.upload_token_key.clone(),
+    &state.upload_token_key,
     state.upload_token_key_expire,
-  )
-  .map_err(|_| StatusCode::ServerError)?;
+  )?;
   Ok(json!({
-    "upload_token": token,
+    "upload_token": upload_token,
   }))
 }
 
-pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, StatusCode> {
-  jwt::verify::<String>(
-    form.upload_token.to_string(),
-    state.upload_token_key.to_owned(),
-  )
-  .map_err(|error| {
-    tracing::error!("{}", error);
-    StatusCode::UploadTokenError
-  })?;
-
+pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, AppError> {
+  jwt::verify::<String>(&form.upload_token, &state.upload_token_key)
+    .map_err(|_| AppError::UploadTokenError)?;
   let base_dir = Path::new(&state.storage_path).join("./agent/upload");
+
   if !base_dir.exists() {
-    fs::create_dir_all(&base_dir).map_err(|_| StatusCode::FileSystemError)?;
+    fs::create_dir_all(&base_dir).map_err(|_| AppError::FileSystemError)?;
   }
-  for (metadata, temp_file) in form.json.iter().zip(form.files.iter()) {
-    if !is_safe_path(&metadata.path) {
-      return Err(StatusCode::UploadError);
-    }
-    let target_path = base_dir.join(metadata.path.trim_start_matches('/'));
-    if let Some(parent) = target_path.parent() {
-      if !parent.exists() {
-        fs::create_dir_all(parent).map_err(|_| StatusCode::UploadError)?;
-      }
-    }
-    fs::copy(temp_file.file.path(), target_path).map_err(|_| StatusCode::UploadError)?;
+
+  for tempfile in form.dist.iter() {
+    let filename = tempfile.file_name.clone().unwrap();
+    let target_path = base_dir.join(filename);
+    fs::copy(tempfile.file.path(), target_path).map_err(|_| AppError::UploadError)?;
   }
+
   let resp = reqwest::Client::new()
     .post(format!("{}/api/deployment/status", state.master_url))
     .json(&json!({
@@ -63,26 +47,15 @@ pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, St
     }))
     .send()
     .await
-    .map_err(|_| StatusCode::SendMasterRequestError)?;
+    .map_err(|_| AppError::RpcCallError)?;
   if !resp.status().is_success() {
-    return Err(StatusCode::SendMasterRequestError);
-  }
-  let keyword_files = vec![
-    "./agent/涉枪涉爆违法信息关键词.txt",
-    "./agent/色情类.txt",
-    "./agent/政治类.txt",
-  ];
-  let keywords =
-    load_keywords_from_files(&keyword_files).map_err(|_| StatusCode::LoadKeywordsError)?;
-  let res = audit_directory(&base_dir, &keywords).map_err(|_| StatusCode::FileSystemError)?;
-  if res.len() != 0 {
-    return Err(StatusCode::DeployError);
+    return Err(AppError::RpcCallError);
   }
   // 申请测试域名
   let domain = generate_domain();
   let nginx_root_path = base_dir
     .canonicalize()
-    .map_err(|_| StatusCode::FileSystemError)?;
+    .map_err(|_| AppError::FileSystemError)?;
   println!("{:?}", nginx_root_path);
   let nginx_config = NginxConfig::new(
     domain,
@@ -93,7 +66,7 @@ pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, St
   if nginx_config.deploy(Path::new("/etc/nginx/sprout")) {
     Ok(json!({}))
   } else {
-    Err(StatusCode::DeployError)
+    Err(AppError::DeployError)
   }
 }
 
@@ -121,14 +94,14 @@ mod tests {
       panic!("Failed to initialize upload: {:?}", res.err().unwrap());
     }
   }
-  #[actix_web::test]
-  async fn test_file_upload_ok() {
-    let state = AppState {
-      agent_id: 1,
-      storage_path: "./tests/data".to_string(),
-      master_url: "http://127.0.0.1".to_string(),
-      upload_token_key: "efkalwfewalkf".to_string(),
-      upload_token_key_expire: 1000,
-    };
-  }
+  // #[actix_web::test]
+  // async fn test_file_upload_ok() {
+  //   let state = AppState {
+  //     agent_id: 1,
+  //     storage_path: "./tests/data".to_string(),
+  //     master_url: "http://127.0.0.1".to_string(),
+  //     upload_token_key: "efkalwfewalkf".to_string(),
+  //     upload_token_key_expire: 1000,
+  //   };
+  // }
 }

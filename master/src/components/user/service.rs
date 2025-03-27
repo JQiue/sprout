@@ -1,16 +1,40 @@
+use entity::user;
 use helpers::{
   hash::{argon2, verify_argon2},
   jwt,
   time::utc_now,
-  uuid::uuid,
+  uuid::{Alphabet, nanoid},
 };
 use sea_orm::{ActiveModelTrait, Set};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
-use crate::{
-  app::AppState, components::user::model::*, entities::user, middleware::auth::JwtPayload,
-  response::StatusCode,
-};
+use crate::{app::AppState, components::user::model::*, error::AppError};
+
+pub async fn generate_casual_user(state: &AppState) -> Result<Value, AppError> {
+  let user_type = "casual";
+  let nickname = format!("casual_{}", nanoid(&Alphabet::UPPER, 12));
+  let email = format!("casual_@{}.com", nanoid(&Alphabet::UPPER, 12));
+  let hashed = argon2(
+    &nanoid(&Alphabet::DEFAULT, 8),
+    &nanoid(&Alphabet::DEFAULT, 8),
+  )
+  .map_err(|_| AppError::HashPasswordError)?;
+  let user_id = nanoid(&Alphabet::DEFAULT, 8);
+  let token = jwt::sign(user_id.clone(), &state.login_token_key, 86400)?;
+  user::ActiveModel {
+    user_id: Set(user_id),
+    nickname: Set(nickname),
+    email: Set(email),
+    password: Set(hashed),
+    status: Set("active".to_string()),
+    r#type: Set(user_type.to_string()),
+    created_at: Set(utc_now()),
+    ..Default::default()
+  }
+  .insert(&state.db)
+  .await?;
+  Ok(json!({ "token": token }))
+}
 
 /// Registers a new user in the system.
 ///
@@ -38,33 +62,29 @@ pub async fn user_register(
   nickname: String,
   email: String,
   password: String,
-) -> Result<Value, StatusCode> {
+) -> Result<Value, AppError> {
   if has_user(UserQueryBy::Email(email.clone()), &state.db).await? {
-    return Err(StatusCode::UserExist);
+    return Err(AppError::UserExist);
   }
-  let mut user_type = UserType::Normal;
+  let mut user_type = "normal";
   if is_first_user(&state.db).await? {
-    user_type = UserType::Admin;
+    user_type = "admin";
   }
-  let hashed =
-    argon2(password.as_bytes(), b"@QQ.wjq21").map_err(|_| StatusCode::HashPasswordError)?;
-  let user_id = uuid(&helpers::uuid::Alphabet::DEFAULT, 8);
-  match (user::ActiveModel {
+  let hashed = argon2(&password, "@QQ.wjq21").map_err(|_| AppError::HashPasswordError)?;
+  let user_id = nanoid(&helpers::uuid::Alphabet::DEFAULT, 8);
+  let user = user::ActiveModel {
     user_id: Set(user_id),
     nickname: Set(nickname),
     email: Set(email),
     password: Set(hashed),
-    status: Set(UserStatus::Active),
-    r#type: Set(user_type),
+    status: Set("active".to_string()),
+    r#type: Set(user_type.to_string()),
     created_at: Set(utc_now()),
     ..Default::default()
-  })
-  .insert(&state.db)
-  .await
-  {
-    Ok(result) => Ok(json!({ "insert_id": result.id })),
-    Err(_err) => Err(StatusCode::DbError),
   }
+  .insert(&state.db)
+  .await?;
+  Ok(json!({ "insert_id": user.id }))
 }
 
 /// This function verifies the user's credentials and generates a JWT token upon successful authentication.
@@ -87,30 +107,22 @@ pub async fn user_login(
   state: &AppState,
   email: String,
   password: String,
-) -> Result<Value, StatusCode> {
+) -> Result<Value, AppError> {
   if !has_user(UserQueryBy::Email(email.clone()), &state.db).await? {
-    return Err(StatusCode::UserNotFound);
+    return Err(AppError::UserNotFound);
   }
   let user = get_user(UserQueryBy::Email(email), &state.db).await?;
-  if verify_argon2(user.password, password.as_bytes()).map_err(|_| StatusCode::ServerError)? {
-    let token = jwt::sign(
-      JwtPayload {
-        user_id: user.user_id,
-        user_type: user.r#type,
-      },
-      state.login_token_key.clone(),
-      86400,
-    )
-    .map_err(|_| StatusCode::ServerError)?;
+  if verify_argon2(&user.password, &password)? {
+    let token = jwt::sign(user.user_id, &state.login_token_key, 86400)?;
     Ok(json!({
       "token": token
     }))
   } else {
-    Err(StatusCode::PasswordError)
+    Err(AppError::PasswordError)
   }
 }
 
-pub async fn get_user_info(state: &AppState, user_id: String) -> Result<Value, StatusCode> {
+pub async fn get_user_info(state: &AppState, user_id: String) -> Result<Value, AppError> {
   let model = get_user(UserQueryBy::UserId(user_id), &state.db).await?;
   Ok(json!({
       "user_id": model.user_id,
@@ -124,10 +136,10 @@ pub async fn set_user_password(
   _state: &AppState,
   _user_id: String,
   _password: String,
-) -> Result<Value, StatusCode> {
-  Err(StatusCode::NotImplemented)
+) -> Result<Value, AppError> {
+  Err(AppError::NotImplemented)
 }
 
-pub async fn refresh_user_token(_state: &AppState, _user_id: String) -> Result<Value, StatusCode> {
-  Err(StatusCode::NotImplemented)
+pub async fn refresh_user_token(_state: &AppState, _user_id: String) -> Result<Value, AppError> {
+  Err(AppError::NotImplemented)
 }

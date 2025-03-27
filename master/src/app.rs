@@ -1,11 +1,9 @@
 use actix_cors::Cors;
 use actix_web::{
-  middleware,
+  App, HttpResponse, HttpServer, middleware,
   web::{self, ServiceConfig},
-  App, HttpResponse, HttpServer,
 };
-use actix_web_httpauth::middleware::HttpAuthentication;
-use sea_orm::{Database, DatabaseConnection};
+use sea_orm::DatabaseConnection;
 
 use crate::{
   components::{
@@ -13,7 +11,8 @@ use crate::{
     user::UserComponent,
   },
   config::Config,
-  middleware::auth::validator,
+  error::AppError,
+  migration::migrate,
 };
 
 #[derive(Debug, Clone)]
@@ -41,32 +40,37 @@ pub fn config_app(cfg: &mut ServiceConfig) {
   );
 }
 
-pub async fn start() -> anyhow::Result<()> {
-  let app_config = Config::from_env()?;
-  let db = Database::connect(app_config.database_url).await?;
+pub async fn start() -> Result<(), AppError> {
+  let Config {
+    workers,
+    host,
+    port,
+    database_url,
+    login_token_key,
+    register_agent_key,
+    register_agent_key_expire,
+    ..
+  } = Config::from_env()?;
+  let db = migrate(&database_url).await?;
   db.ping().await?;
   let state = AppState {
     db,
-    login_token_key: app_config.login_token_key,
-    register_agent_key: app_config.register_agent_key,
-    register_agent_key_expire: app_config.register_agent_key_expire,
+    login_token_key: login_token_key,
+    register_agent_key: register_agent_key,
+    register_agent_key_expire: register_agent_key_expire,
   };
-  HttpServer::new(move || {
-    App::new()
-      .wrap(HttpAuthentication::with_fn(validator))
-      .wrap(middleware::Logger::default())
-      .wrap(Cors::permissive())
-      .app_data(web::Data::new(state.clone()))
-      .configure(config_app)
-  })
-  .bind((app_config.host, app_config.port))?
-  .bind(("localhost", app_config.port))?
-  .bind(("192.168.5.13", app_config.port))?
-  .workers(app_config.workers)
-  .run()
-  .await
-  .map_err(|error| {
-    tracing::error!("{}", error);
-    anyhow::Error::from(error)
-  })
+  Ok(
+    HttpServer::new(move || {
+      App::new()
+        // .wrap(HttpAuthentication::with_fn(validator))
+        .wrap(middleware::Logger::default())
+        .wrap(Cors::permissive())
+        .app_data(web::Data::new(state.clone()))
+        .configure(config_app)
+    })
+    .bind((host, port))?
+    .workers(workers)
+    .run()
+    .await?,
+  )
 }

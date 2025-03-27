@@ -3,10 +3,10 @@ use sea_orm_migration::{prelude::*, schema::*};
 #[derive(DeriveIden)]
 enum Nginx {
   Table,
-  Id,            // 主键ID
-  SiteId,        // 关联的站点ID
-  AgentId,       // 关联的AgentID
-  ConfigContent, // Nginx配置内容
+  Id,            // 主键 ID
+  SiteId,        // 关联的站点 ID
+  AgentId,       // 关联的 AgentID
+  ConfigContent, // Nginx 配置内容
   CreatedAt,     // 创建时间
   UpdatedAt,     // 更新时间
 }

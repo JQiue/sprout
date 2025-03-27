@@ -1,5 +1,6 @@
 mod assets;
 mod helper;
+mod rpc;
 
 use core::panic;
 use std::{
@@ -16,6 +17,7 @@ use clap::{arg, Parser, ValueEnum};
 use console::{style, Emoji};
 use helper::{audit_directory, load_keywords_from_embedded, tar_directory};
 use indicatif::{MultiProgress, ProgressBar, ProgressIterator, ProgressStyle};
+use rpc::Rpc;
 
 #[derive(Parser)]
 #[command(name = "cli")]
@@ -24,6 +26,8 @@ use indicatif::{MultiProgress, ProgressBar, ProgressIterator, ProgressStyle};
 #[command(about = "a tutorial of crate clap", long_about = None)]
 struct Cli {
   mode: Mode,
+  #[arg(long)]
+  target: Option<String>,
   #[arg(long, default_value_t = false)]
   skip_build: bool,
 }
@@ -39,10 +43,15 @@ static LOOKING_GLASS: Emoji<'_, '_> = Emoji("🔍  ", "");
 #[derive(Debug)]
 enum ProjectType {
   Vuepress,
+  Custom,
   Unknown,
 }
 
 fn get_project_type() -> ProjectType {
+  let cli = Cli::parse();
+  if cli.target.is_some() {
+    return ProjectType::Custom;
+  }
   if let Ok(content) = fs::read("./package.json") {
     if let Ok(content) = String::from_utf8(content) {
       if content.contains("vuepress") {
@@ -91,11 +100,18 @@ fn build_project(project_type: ProjectType) -> String {
       }
       "./docs/.vuepress/dist".to_string()
     }
-    ProjectType::Unknown => "./".to_string(),
+    ProjectType::Custom => {
+      let path = cli.target.clone().unwrap() + "/index.html";
+      if !Path::new(&path).exists() {
+        panic!("not found index.html")
+      }
+      return cli.target.unwrap();
+    }
+    ProjectType::Unknown => panic!("unknown project type"),
   }
 }
 
-fn audit_content(path: String) {
+fn audit_project(path: String) {
   let path = Path::new(&path);
   if !path.exists() {
     panic!("Path does not exist: {:?}", path);
@@ -113,9 +129,29 @@ fn audit_content(path: String) {
   }
 }
 
-async fn deploy_site(path: String) -> String {
+fn get_site_id() {}
+
+fn is_login() -> bool {
+  false
+}
+
+async fn preview_project() {
+  let rpc = Rpc::new("http://127.0.0.1:3000".to_string());
+  let token = rpc.get_casual_token().await;
+  println!("{token}");
+  let deploy_data = rpc.deploy(token).await;
+  println!("{:?}", deploy_data);
+}
+
+async fn deploy_project(path: String) -> String {
   tar_directory(path, "./dist.tar".to_string());
-  "http://root.is.me".to_string()
+  if is_login() {
+    let site_id = get_site_id();
+    "root.is.me".to_string()
+  } else {
+    preview_project().await;
+    "root.is.me".to_string()
+  }
 }
 
 async fn deploy() {
@@ -144,19 +180,26 @@ async fn deploy() {
     style("[3/4]").bold().dim(),
     LOOKING_GLASS
   ));
-  audit_content(path.clone());
+  audit_project(path.clone());
   println!("Review success");
   pb.set_message(format!(
     "{} {}Deploy site...",
     style("[4/4]").bold().dim(),
     LOOKING_GLASS
   ));
-  let domian = deploy_site(path).await;
+  let domian = deploy_project(path).await;
   println!("Deploy success!");
-  pb.finish_with_message(format!(
-    "Bind domian: {}, Please use cname to bind the domian",
-    style(domian).cyan(),
-  ));
+  if is_login() {
+    pb.finish_with_message(format!(
+      "Bind domian: {}, Please use cname to bind the domian",
+      style(domian).cyan(),
+    ));
+  } else {
+    pb.finish_with_message(format!(
+      "Preview site: {}, Please use click to preview the site",
+      style(domian).cyan(),
+    ));
+  }
 }
 
 #[tokio::main]

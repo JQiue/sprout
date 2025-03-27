@@ -1,18 +1,29 @@
 use actix_web::{
-  get, post,
+  HttpResponse, get, post,
   web::{Data, Json, ReqData},
-  HttpResponse,
 };
 
 use crate::{
   app::AppState,
   components::user::{model::*, service},
-  middleware::auth::JwtPayload,
+  error::AppError,
+  middlewares::JwtPayload,
   response::Response,
 };
 
+#[get("/user/casual")]
+pub async fn generate_casual_user(state: Data<AppState>) -> Result<HttpResponse, AppError> {
+  match service::generate_casual_user(&state).await {
+    Ok(data) => Response::success(Some(data)),
+    Err(err) => Response::<()>::error(err),
+  }
+}
+
 #[post("/user")]
-pub async fn user_register(state: Data<AppState>, body: Json<UserRegisterBody>) -> HttpResponse {
+pub async fn user_register(
+  state: Data<AppState>,
+  body: Json<UserRegisterBody>,
+) -> Result<HttpResponse, AppError> {
   let Json(UserRegisterBody {
     nickname,
     password,
@@ -20,25 +31,31 @@ pub async fn user_register(state: Data<AppState>, body: Json<UserRegisterBody>) 
   }) = body;
 
   match service::user_register(&state, nickname, email, password).await {
-    Ok(data) => HttpResponse::Ok().json(Response::success(data)),
-    Err(err) => HttpResponse::Ok().json(Response::<()>::error(err)),
+    Ok(data) => Response::success(Some(data)),
+    Err(err) => Response::<()>::error(err),
   }
 }
 
 #[post("/user/token")]
-pub async fn user_login(state: Data<AppState>, body: Json<UserLoginBody>) -> HttpResponse {
+pub async fn user_login(
+  state: Data<AppState>,
+  body: Json<UserLoginBody>,
+) -> Result<HttpResponse, AppError> {
   let Json(UserLoginBody { email, password }) = body;
   match service::user_login(&state, email, password).await {
-    Ok(data) => HttpResponse::Ok().json(Response::success(data)),
-    Err(err) => HttpResponse::Ok().json(Response::<()>::error(err)),
+    Ok(data) => Response::success(Some(data)),
+    Err(err) => Response::<()>::error(err),
   }
 }
 
 #[get("/user/info")]
-pub async fn get_user_info(state: Data<AppState>, req_data: ReqData<JwtPayload>) -> HttpResponse {
+pub async fn get_user_info(
+  state: Data<AppState>,
+  req_data: ReqData<JwtPayload>,
+) -> Result<HttpResponse, AppError> {
   match service::get_user_info(&state, req_data.user_id.clone()).await {
-    Ok(data) => HttpResponse::Ok().json(Response::success(data)),
-    Err(err) => HttpResponse::Ok().json(Response::<()>::error(err)),
+    Ok(data) => Response::success(Some(data)),
+    Err(err) => Response::<()>::error(err),
   }
 }
 
@@ -47,11 +64,11 @@ pub async fn set_user_password(
   state: Data<AppState>,
   body: Json<SetUserPasswordBody>,
   req_data: ReqData<JwtPayload>,
-) -> HttpResponse {
+) -> Result<HttpResponse, AppError> {
   let Json(SetUserPasswordBody { password }) = body;
   match service::set_user_password(&state, req_data.user_id.clone(), password).await {
-    Ok(data) => HttpResponse::Ok().json(Response::success(data)),
-    Err(err) => HttpResponse::Ok().json(Response::<()>::error(err)),
+    Ok(data) => Response::success(Some(data)),
+    Err(err) => Response::<()>::error(err),
   }
 }
 
@@ -59,9 +76,9 @@ pub async fn set_user_password(
 pub async fn refresh_user_token(
   state: Data<AppState>,
   req_data: ReqData<JwtPayload>,
-) -> HttpResponse {
+) -> Result<HttpResponse, AppError> {
   match service::refresh_user_token(&state, req_data.user_id.clone()).await {
-    Ok(data) => HttpResponse::Ok().json(Response::success(data)),
-    Err(err) => HttpResponse::Ok().json(Response::<()>::error(err)),
+    Ok(data) => Response::success(Some(data)),
+    Err(err) => Response::<()>::error(err),
   }
 }

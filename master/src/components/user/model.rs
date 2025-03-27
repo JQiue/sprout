@@ -5,8 +5,9 @@ use sea_orm::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::entities::user;
-use crate::response::StatusCode;
+use entity::user;
+
+use crate::error::AppError;
 
 #[derive(Serialize, Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
 #[sea_orm(
@@ -58,45 +59,34 @@ pub struct SetUserPasswordBody {
   pub password: String,
 }
 
-pub async fn has_user(query_by: UserQueryBy, db: &DatabaseConnection) -> Result<bool, StatusCode> {
+pub async fn has_user(query_by: UserQueryBy, db: &DatabaseConnection) -> Result<bool, AppError> {
   let mut query = user::Entity::find();
   match query_by {
     UserQueryBy::UserId(user_id) => query = query.filter(user::Column::UserId.eq(user_id)),
     UserQueryBy::Email(email) => query = query.filter(user::Column::Email.eq(email)),
   }
-  let res = query
-    .one(db)
-    .await
-    .map_err(|_| StatusCode::DbError)?
-    .ok_or(StatusCode::UserNotFound);
+  let res = query.one(db).await?.ok_or(AppError::UserNotFound);
   Ok(res.is_ok())
 }
 
 pub async fn get_user(
   query_by: UserQueryBy,
   db: &DatabaseConnection,
-) -> Result<user::Model, StatusCode> {
+) -> Result<user::Model, AppError> {
   let mut query = user::Entity::find();
   match query_by {
     UserQueryBy::UserId(user_id) => query = query.filter(user::Column::UserId.eq(user_id)),
     UserQueryBy::Email(email) => query = query.filter(user::Column::Email.eq(email)),
   }
-  query
-    .one(db)
-    .await
-    .map_err(|_| StatusCode::DbError)?
-    .ok_or(StatusCode::UserNotFound)
+  query.one(db).await?.ok_or(AppError::UserNotFound)
 }
 
-pub async fn is_first_user(db: &DatabaseConnection) -> Result<bool, StatusCode> {
-  let count = user::Entity::find()
-    .count(db)
-    .await
-    .map_err(|_| StatusCode::DbError)?;
+pub async fn is_first_user(db: &DatabaseConnection) -> Result<bool, AppError> {
+  let count = user::Entity::find().count(db).await?;
   Ok(count == 0)
 }
 
-pub async fn is_admin(user_id: String, db: &DatabaseConnection) -> Result<bool, StatusCode> {
+pub async fn is_admin(user_id: String, db: &DatabaseConnection) -> Result<bool, AppError> {
   let user_type = get_user(UserQueryBy::UserId(user_id), db).await?.r#type;
-  Ok(user_type == UserType::Admin)
+  Ok(user_type == "admin")
 }

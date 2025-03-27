@@ -1,23 +1,27 @@
 use actix_web::{
-  get, post,
+  HttpRequest, HttpResponse, get, post,
   web::{Data, Json, Path, ReqData},
-  HttpResponse,
 };
-use serde_json::json;
+use helpers::jwt;
 
 use crate::{
   app::AppState,
   components::agent::{model::*, service},
-  middleware::auth::JwtPayload,
+  error::AppError,
+  helper::extract_token,
+  middlewares::JwtPayload,
   response::Response,
 };
 
 #[post("/agent")]
 pub async fn register_agent(
+  req: HttpRequest,
   state: Data<AppState>,
-  req_data: ReqData<JwtPayload>,
   body: Json<RegisterAgentBody>,
-) -> HttpResponse {
+) -> Result<HttpResponse, AppError> {
+  let user_id = jwt::verify(&extract_token(&req)?, &state.login_token_key)?
+    .claims
+    .data;
   let Json(RegisterAgentBody {
     hostname,
     ip_address,
@@ -27,7 +31,7 @@ pub async fn register_agent(
   }) = body;
   match service::register_agent(
     &state,
-    req_data.user_id.clone(),
+    user_id,
     hostname,
     ip_address,
     storage_path,
@@ -36,22 +40,19 @@ pub async fn register_agent(
   )
   .await
   {
-    Ok(data) => HttpResponse::Ok().json(Response::success(data)),
-    Err(err) => HttpResponse::Ok().json(Response::<()>::error(err)),
+    Ok(data) => Response::success(Some(data)),
+    Err(err) => Response::<()>::error(err),
   }
 }
 
 #[get("/agent/{agent_id}")]
-pub async fn get_agent_status(state: Data<AppState>, agent_id: Path<i32>) -> HttpResponse {
+pub async fn get_agent_status(
+  state: Data<AppState>,
+  agent_id: Path<u32>,
+) -> Result<HttpResponse, AppError> {
   match service::get_agent_status(&state, agent_id.into_inner()).await {
-    Ok(data) => HttpResponse::Ok().json(Response::success(json!({
-      "cpu_cores" : data.data.cpu_cores,
-      "cpu_usage" : data.data.cpu_usage,
-      "total_memory": data.data.total_memory,
-      "free_memory": data.data.free_memory,
-      "memory_usage": data.data.memory_usage,
-    }))),
-    Err(err) => HttpResponse::Ok().json(Response::<()>::error(err)),
+    Ok(data) => Response::success(Some(data)),
+    Err(err) => Response::<()>::error(err),
   }
 }
 
@@ -59,11 +60,11 @@ pub async fn get_agent_status(state: Data<AppState>, agent_id: Path<i32>) -> Htt
 pub async fn refresh_agent_token(
   state: Data<AppState>,
   req_data: ReqData<JwtPayload>,
-  agent_id: Path<i32>,
-) -> HttpResponse {
+  agent_id: Path<u32>,
+) -> Result<HttpResponse, AppError> {
   match service::refresh_agent_token(&state, req_data.user_id.clone(), agent_id.into_inner()).await
   {
-    Ok(data) => HttpResponse::Ok().json(Response::success(json!(data))),
-    Err(err) => HttpResponse::Ok().json(Response::<()>::error(err)),
+    Ok(data) => Response::success(Some(data)),
+    Err(err) => Response::<()>::error(err),
   }
 }

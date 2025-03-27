@@ -9,19 +9,23 @@ actix-cors = { workspace = true }
 actix-web = { workspace = true }
 actix-web-httpauth = { workspace = true }
 aho-corasick = { workspace = true }
-anyhow = { workspace = true }
 dotenvy = { workspace = true }
 envy = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 tracing = { workspace = true }
-tracing-subscriber = { workspace = true }
-bcrypt = { workspace = true }
+tracing-subscriber = { workspace = true, features = [
+  "env-filter",
+  "local-time",
+] }
 sea-orm = { workspace = true, features = [
   "sqlx-sqlite",
   "runtime-tokio-rustls",
   "macros",
+  "debug-print",
 ] }
 reqwest = { workspace = true, features = ["json"] }
 cloudflare = { workspace = true }
 tokio = { version = "1.44.1", features = ["full"] }
+entity = { workspace = true }
+migration = { workspace = true }
