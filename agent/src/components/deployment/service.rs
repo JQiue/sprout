@@ -23,18 +23,17 @@ pub async fn init_upload(state: &AppState, site_id: String) -> Result<Value, App
 }
 
 pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, AppError> {
-  jwt::verify::<String>(&form.upload_token, &state.upload_token_key)
-    .map_err(|_| AppError::UploadTokenError)?;
+  jwt::verify::<String>(&form.upload_token, &state.upload_token_key)?;
   let base_dir = Path::new(&state.storage_path).join("./agent/upload");
 
   if !base_dir.exists() {
-    fs::create_dir_all(&base_dir).map_err(|_| AppError::FileSystemError)?;
+    fs::create_dir_all(&base_dir)?;
   }
 
   for tempfile in form.dist.iter() {
     let filename = tempfile.file_name.clone().unwrap();
     let target_path = base_dir.join(filename);
-    fs::copy(tempfile.file.path(), target_path).map_err(|_| AppError::UploadError)?;
+    fs::copy(tempfile.file.path(), target_path)?;
   }
 
   let resp = reqwest::Client::new()
@@ -53,9 +52,7 @@ pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, Ap
   }
   // 申请测试域名
   let domain = generate_domain();
-  let nginx_root_path = base_dir
-    .canonicalize()
-    .map_err(|_| AppError::FileSystemError)?;
+  let nginx_root_path = base_dir.canonicalize()?;
   println!("{:?}", nginx_root_path);
   let nginx_config = NginxConfig::new(
     domain,
@@ -66,7 +63,7 @@ pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, Ap
   if nginx_config.deploy(Path::new("/etc/nginx/sprout")) {
     Ok(json!({}))
   } else {
-    Err(AppError::DeployError)
+    Err(AppError::Error)
   }
 }
 

@@ -4,8 +4,9 @@ use sysinfo::{CpuRefreshKind, RefreshKind};
 use crate::{app::AppState, error::AppError};
 
 pub async fn heartbeat(_state: &AppState) -> Result<Value, AppError> {
-  let mut s =
-    sysinfo::System::new_with_specifics(RefreshKind::new().with_cpu(CpuRefreshKind::everything()));
+  let mut s = sysinfo::System::new_with_specifics(
+    RefreshKind::everything().with_cpu(CpuRefreshKind::everything()),
+  );
   // Wait a bit because CPU usage is based on diff.
   std::thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL);
   // Refresh CPUs again to get actual value.

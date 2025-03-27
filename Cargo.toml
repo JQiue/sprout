@@ -1,5 +1,5 @@
 [workspace]
-members = ["master", "cli", "migration", "entity"]
+members = ["master", "cli", "migration", "entity", "agent"]
 
 [workspace.dependencies]
 actix-cors = "0.7.1"

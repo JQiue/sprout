@@ -1,13 +1,13 @@
 use actix_cors::Cors;
 use actix_web::{
-  middleware,
+  App, HttpResponse, HttpServer, middleware,
   web::{self, ServiceConfig},
-  App, HttpResponse, HttpServer,
 };
 
 use crate::{
   components::{deployment::DeploymentComponent, heartbeat::HeartbeatComponent},
   config::Config,
+  error::AppError,
 };
 
 #[derive(Debug, Clone)]
@@ -32,7 +32,7 @@ pub fn config_app(cfg: &mut ServiceConfig) {
   );
 }
 
-pub async fn start() -> anyhow::Result<()> {
+pub async fn start() -> Result<(), AppError> {
   let app_config = Config::from_env();
   let state = AppState {
     agent_id: app_config.agent_id,
@@ -41,16 +41,17 @@ pub async fn start() -> anyhow::Result<()> {
     upload_token_key: app_config.upload_token_key,
     upload_token_key_expire: app_config.upload_token_key_expire,
   };
-  HttpServer::new(move || {
-    App::new()
-      .app_data(web::Data::new(state.clone()))
-      .wrap(Cors::permissive())
-      .wrap(middleware::Logger::default())
-      .configure(config_app)
-  })
-  .bind((app_config.host, app_config.port))?
-  .workers(app_config.workers)
-  .run()
-  .await
-  .map_err(anyhow::Error::from)
+  Ok(
+    HttpServer::new(move || {
+      App::new()
+        .app_data(web::Data::new(state.clone()))
+        .wrap(Cors::permissive())
+        .wrap(middleware::Logger::default())
+        .configure(config_app)
+    })
+    .bind((app_config.host, app_config.port))?
+    .workers(app_config.workers)
+    .run()
+    .await?,
+  )
 }
