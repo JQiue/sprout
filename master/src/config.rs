@@ -26,6 +26,6 @@ pub struct Config {
 impl Config {
   pub fn from_env() -> Result<Config, AppError> {
     dotenvy::dotenv_override().ok();
-    Ok(envy::from_env::<Config>()?)
+    Ok(envy::from_env()?)
   }
 }

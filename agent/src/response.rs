@@ -1,7 +1,7 @@
 use std::fmt::{Debug, Display};
 
 use actix_web::HttpResponse;
-use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use serde::{Deserialize, Serialize};
 
 use crate::error::AppError;
 

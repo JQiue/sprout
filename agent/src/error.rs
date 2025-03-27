@@ -7,7 +7,6 @@ pub enum AppError {
   AuthFailed,
   Forbidden,
   ValidationFailed,
-  NotImplemented,
   DeploymentNotFound,
   RpcCallError,
 }
@@ -16,7 +15,6 @@ impl AppError {
   pub fn code(&self) -> i32 {
     match self {
       AppError::Error => 1000,
-      AppError::NotImplemented => 3000,
       AppError::AuthFailed => todo!(),
       AppError::Forbidden => todo!(),
       AppError::ValidationFailed => todo!(),
@@ -31,7 +29,6 @@ impl AppError {
       AppError::AuthFailed => "认证失败".to_string(),
       AppError::Forbidden => "".to_string(),
       AppError::ValidationFailed => "".to_string(),
-      AppError::NotImplemented => "".to_string(),
       AppError::DeploymentNotFound => "".to_string(),
       AppError::Env => "".to_string(),
       AppError::RpcCallError => "".to_string(),

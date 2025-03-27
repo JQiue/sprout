@@ -33,7 +33,7 @@ pub fn config_app(cfg: &mut ServiceConfig) {
 }
 
 pub async fn start() -> Result<(), AppError> {
-  let app_config = Config::from_env();
+  let app_config = Config::from_env()?;
   let state = AppState {
     agent_id: app_config.agent_id,
     storage_path: app_config.storage_path,

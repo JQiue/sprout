@@ -2,6 +2,8 @@
 
 use serde::Deserialize;
 
+use crate::error::AppError;
+
 fn default_workers() -> usize {
   1
 }
@@ -20,9 +22,8 @@ pub struct Config {
 }
 
 impl Config {
-  pub fn from_env() -> Config {
-    // dotenvy::dotenv_override().ok();
-    dotenvy::from_filename("agent.env").unwrap();
-    envy::from_env().unwrap()
+  pub fn from_env() -> Result<Config, AppError> {
+    dotenvy::dotenv_override();
+    Ok(envy::from_env()?)
   }
 }
