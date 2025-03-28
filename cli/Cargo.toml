@@ -11,7 +11,7 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
-reqwest = { workspace = true, features = ["json"] }
+reqwest = { workspace = true, features = ["json", "multipart", "stream"] }
 helpers = { workspace = true, features = ["jwt", "rand"] }
 cloudflare = { workspace = true }
 tokio = { version = "1.44.1", features = ["full"] }

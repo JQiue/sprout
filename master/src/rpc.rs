@@ -4,7 +4,7 @@ use entity::deployment;
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tracing::error;
+use tracing::{debug, error};
 
 use crate::{components::agent::model::get_agent, error::AppError, response::Response};
 
@@ -37,7 +37,7 @@ impl AgentRpc {
     deployment: deployment::Model,
   ) -> Result<InitUploadData, AppError> {
     let resp = reqwest::Client::new()
-      .post(format!("http://{}/api/upload/init", agent_ip))
+      .post(format!("http://{}:5001/api/upload/init", agent_ip))
       .timeout(Duration::from_secs(3))
       .json(&json!({
         "site_id": deployment.site_id,
@@ -52,7 +52,7 @@ impl AgentRpc {
         error!("{}", err);
         AppError::RpcCallError
       })?;
-    error!("Response body: {:?}", data);
+    debug!("Response body: {:?}", data);
     Ok(data.data)
   }
 

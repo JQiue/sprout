@@ -6,7 +6,7 @@ use core::panic;
 use std::{
   fs,
   io::{BufRead, BufReader},
-  path::Path,
+  path::{Path, PathBuf},
   process::{Command, Stdio},
   str::{self},
   thread,
@@ -17,7 +17,7 @@ use clap::{arg, Parser, ValueEnum};
 use console::{style, Emoji};
 use helper::{audit_directory, load_keywords_from_embedded, tar_directory};
 use indicatif::{MultiProgress, ProgressBar, ProgressIterator, ProgressStyle};
-use rpc::Rpc;
+use rpc::{DeployData, Rpc};
 
 #[derive(Parser)]
 #[command(name = "cli")]
@@ -135,21 +135,26 @@ fn is_login() -> bool {
   false
 }
 
-async fn preview_project() {
+async fn preview_project(path: PathBuf) {
   let rpc = Rpc::new("http://127.0.0.1:3000".to_string());
   let token = rpc.get_casual_token().await;
-  println!("{token}");
-  let deploy_data = rpc.deploy(token).await;
+  let deploy_data = rpc.create_site(token).await;
   println!("{:?}", deploy_data);
+  let r = rpc.upload(deploy_data, path).await;
 }
 
 async fn deploy_project(path: String) -> String {
-  tar_directory(path, "./dist.tar".to_string());
   if is_login() {
     let site_id = get_site_id();
     "root.is.me".to_string()
   } else {
-    preview_project().await;
+    let rpc = Rpc::new("http://127.0.0.1:3000".to_string());
+    let token = rpc.get_casual_token().await;
+    let deploy_data = rpc.create_site(token).await;
+    let path = tar_directory(path.clone(), deploy_data.clone().site_id);
+    println!("{:?}", deploy_data);
+    rpc.upload(deploy_data, path).await;
+    // preview_project(path).await;
     "root.is.me".to_string()
   }
 }

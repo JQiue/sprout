@@ -216,11 +216,13 @@ pub fn load_keywords_from_files(file_paths: &[&str]) -> Result<Vec<String>, std:
   Ok(keywords)
 }
 
-pub fn tar_directory(source: String, output: String) {
-  let temp = temp_dir().join(output);
-  let mut builder = Builder::new(File::create(temp).unwrap());
-  builder.append_dir_all(".", source).unwrap();
+pub fn tar_directory(source: String, filename: String) -> PathBuf {
+  let temp = temp_dir().join(format!("{filename}.tar"));
+  println!(">>> tar dist to {:?}", temp.clone());
+  let mut builder = Builder::new(File::create(temp.clone()).unwrap());
+  builder.append_dir_all(filename, source).unwrap();
   builder.finish().unwrap();
+  temp
 }
 
 #[cfg(test)]

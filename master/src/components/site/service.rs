@@ -8,7 +8,7 @@ use crate::{
 use entity::{deployment, site};
 use helpers::{
   time::utc_now,
-  uuid::{Alphabet, nanoid_segmented},
+  uuid::{Alphabet, nanoid, nanoid_segmented},
 };
 use sea_orm::{ActiveModelTrait, DatabaseConnection, IntoActiveModel, Set};
 use serde_json::{Value, json};
@@ -33,7 +33,7 @@ pub async fn create_site(
   site_name: String,
 ) -> Result<Value, AppError> {
   let agent = get_avaliable_agent(&state.db).await?;
-  let site_id = nanoid_segmented(&Alphabet::NUMBERS_UPPER, 25, '-', 5);
+  let site_id = nanoid(&Alphabet::LOWER, 25);
   let site = site::ActiveModel {
     site_id: Set(site_id.clone()),
     name: Set(site_name),
