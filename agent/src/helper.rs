@@ -2,7 +2,7 @@ use std::{fs, io, path::Path, process::Command};
 
 use serde::{Deserialize, Serialize};
 
-pub fn generate_domian(site_id: String) -> String {
+pub fn generate_domian(site_id: &str) -> String {
   format!("{site_id}.is.me")
 }
 

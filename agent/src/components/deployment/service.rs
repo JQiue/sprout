@@ -24,7 +24,7 @@ pub async fn init_upload(state: &AppState, site_id: String) -> Result<Value, App
 }
 
 pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, AppError> {
-  let site_id = jwt::verify(&form.upload_token, &state.upload_token_key)?
+  let site_id = jwt::verify::<String>(&form.upload_token, &state.upload_token_key)?
     .claims
     .data;
   let base_dir = Path::new(&state.storage_path).join("./agent");
@@ -46,16 +46,16 @@ pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, Ap
   )
   .update_deployment_status()
   .await?;
-  // 申请测试域名
-  let domian = generate_domian(site_id);
-  let nginx_root_path = base_dir.canonicalize()?;
-  println!("{:?}", nginx_root_path);
-  let nginx_config = NginxConfig::new(
-    domian.clone(),
-    nginx_root_path.to_string_lossy().to_string(),
-    false,
-    None,
+  // 解压 tar
+  // 申请域名
+  let domian = generate_domian(&site_id);
+  let nginx_root_path = format!(
+    "{}/{}",
+    base_dir.canonicalize()?.to_string_lossy().to_string(),
+    site_id
   );
+  println!("{:?}", nginx_root_path);
+  let nginx_config = NginxConfig::new(domian.clone(), nginx_root_path, false, None);
   if nginx_config.deploy(Path::new("/etc/nginx/sprout")) {
     Ok(json!({ "domian": domian }))
   } else {
