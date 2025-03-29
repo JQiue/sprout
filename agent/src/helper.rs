@@ -1,9 +1,45 @@
-use std::{fs, io, path::Path, process::Command};
-
 use serde::{Deserialize, Serialize};
+use std::{
+  fs,
+  io::{self, BufRead, BufReader},
+  path::Path,
+  process::{Command, Stdio},
+};
 
 pub fn generate_domian(site_id: &str) -> String {
   format!("{site_id}.is.me")
+}
+
+pub fn extract_tar(filename: String) {
+  let mut child = Command::new("tar")
+    .arg("-xf")
+    .arg(filename)
+    .stdout(Stdio::piped())
+    .stderr(Stdio::piped())
+    .spawn()
+    .expect("Build failed");
+  let stdout = child.stdout.take().expect("Failed to capture stdout");
+  let stderr = child.stderr.take().expect("Failed to capture stderr");
+  let stdout_reader = BufReader::new(stdout);
+  for line in stdout_reader.lines() {
+    match line {
+      Ok(line) => println!("{}", line),
+      Err(e) => println!("Error reading stdout: {}", e),
+    }
+  }
+  let stderr_reader = BufReader::new(stderr);
+  for line in stderr_reader.lines() {
+    match line {
+      Ok(line) => println!("{}", line),
+      Err(e) => println!("Error reading stderr: {}", e),
+    }
+  }
+  let status = child.wait().expect("Failed to wait for build process");
+  if status.success() {
+    println!("Build succeeded!");
+  } else {
+    println!("Build failed with status: {}", status);
+  }
 }
 
 // 遍历目录下的所有文件和子目录，并对每个文件调用回调函数
@@ -189,5 +225,9 @@ mod test {
     let total_size = calculate_total_size(path);
     println!("{:?}", total_size);
     calculate_total_size(Path::new("./")).unwrap();
+  }
+  #[test]
+  pub fn test_extract_tar() {
+    extract_tar("./dist.tar".to_owned());
   }
 }
