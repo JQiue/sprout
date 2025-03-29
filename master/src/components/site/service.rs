@@ -1,16 +1,12 @@
-use super::model::init_upload_session;
 use crate::{
-  app::AppState,
-  components::agent::model::{get_agent, get_avaliable_agent},
-  error::AppError,
-  rpc::AgentRpc,
+  app::AppState, components::agent::model::get_avaliable_agent, error::AppError, rpc::AgentRpc,
 };
 use entity::{deployment, site};
 use helpers::{
   time::utc_now,
-  uuid::{Alphabet, nanoid, nanoid_segmented},
+  uuid::{Alphabet, nanoid},
 };
-use sea_orm::{ActiveModelTrait, DatabaseConnection, IntoActiveModel, Set};
+use sea_orm::{ActiveModelTrait, IntoActiveModel, Set};
 use serde_json::{Value, json};
 
 /// Creates a new site for a user.
@@ -64,35 +60,6 @@ pub async fn create_site(
   Ok(json!({
       "upload_url": agent.ip_address,
       "upload_token": init_response.upload_token,
-      "site_id": site.site_id,
-      "agent_id": deployment.agent_id,
-      "deploy_id": deployment.id,
-  }))
-}
-
-// 下面是样例的部署函数
-async fn deploy_from_template(
-  _template_id: String,
-  deployment: deployment::Model,
-  site: &site::Model,
-) -> Result<Value, AppError> {
-  // 触发 agent 模板构建任务
-  // 实现从模板生成站点的逻辑
-  // 例如，复制文件、初始化配置等
-  Ok(json!({
-     "site_id": site.site_id,
-      "agent_id": deployment.agent_id,
-      "deploy_id": deployment.id,
-  }))
-}
-
-async fn deploy_from_repository(
-  _repo_url: String,
-  deployment: deployment::Model,
-  site: &site::Model,
-) -> Result<Value, AppError> {
-  // 触发 agent 仓库构建任务
-  Ok(json!({
       "site_id": site.site_id,
       "agent_id": deployment.agent_id,
       "deploy_id": deployment.id,

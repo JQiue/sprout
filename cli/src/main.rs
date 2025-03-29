@@ -6,18 +6,17 @@ use core::panic;
 use std::{
   fs,
   io::{BufRead, BufReader},
-  path::{Path, PathBuf},
+  path::Path,
   process::{Command, Stdio},
   str::{self},
-  thread,
   time::Duration,
 };
 
 use clap::{arg, Parser, ValueEnum};
 use console::{style, Emoji};
 use helper::{audit_directory, load_keywords_from_embedded, tar_directory};
-use indicatif::{MultiProgress, ProgressBar, ProgressIterator, ProgressStyle};
-use rpc::{DeployData, Rpc};
+use indicatif::{ProgressBar, ProgressStyle};
+use rpc::MasterRpc;
 
 #[derive(Parser)]
 #[command(name = "cli")]
@@ -107,7 +106,7 @@ fn build_project(project_type: ProjectType) -> String {
       }
       return cli.target.unwrap();
     }
-    ProjectType::Unknown => panic!("unknown project type"),
+    ProjectType::Unknown => panic!("Unknown project type"),
   }
 }
 
@@ -135,26 +134,20 @@ fn is_login() -> bool {
   false
 }
 
-async fn preview_project(path: PathBuf) {
-  let rpc = Rpc::new("http://127.0.0.1:3000".to_string());
-  let token = rpc.get_casual_token().await;
-  let deploy_data = rpc.create_site(token).await;
-  println!("{:?}", deploy_data);
-  let r = rpc.upload(deploy_data, path).await;
-}
-
 async fn deploy_project(path: String) -> String {
   if is_login() {
-    let site_id = get_site_id();
+    let _site_id = get_site_id();
     "root.is.me".to_string()
   } else {
-    let rpc = Rpc::new("http://127.0.0.1:3000".to_string());
+    let rpc = MasterRpc::new();
     let token = rpc.get_casual_token().await;
     let deploy_data = rpc.create_site(token).await;
     let path = tar_directory(path.clone(), deploy_data.clone().site_id);
     println!("{:?}", deploy_data);
-    rpc.upload(deploy_data, path).await;
-    // preview_project(path).await;
+    rpc
+      .upload(deploy_data.upload_url, deploy_data.upload_token, path)
+      .await;
+    rpc.deploy_project(deploy_data.site_id).await;
     "root.is.me".to_string()
   }
 }

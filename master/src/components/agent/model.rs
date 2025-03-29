@@ -80,7 +80,7 @@ pub struct RpcCallData {
 }
 
 pub async fn get_agent_heartbeat(agent_ip: String) -> Result<RpcCallData, AppError> {
-  let resp = reqwest::get(format!("http://{agent_ip}/api/heartbeat")).await?;
+  let resp = reqwest::get(format!("http://{agent_ip}:5001/api/heartbeat")).await?;
   let data = resp.json::<RpcCallData>().await?;
   Ok(data)
 }

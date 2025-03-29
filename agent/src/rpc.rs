@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use serde_json::json;
 
 use crate::{error::AppError, response::Response};
@@ -28,10 +30,10 @@ impl MasterRpc {
         "deployment_id": 1,
         "status": "reviewing"
       }))
+      .timeout(Duration::from_secs(3))
       .send()
       .await?;
-
-    let data = resp.json::<Response<()>>().await?;
+    resp.json::<Response<()>>().await?;
     Ok(())
   }
 }

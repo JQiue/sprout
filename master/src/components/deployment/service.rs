@@ -26,8 +26,8 @@ pub async fn update_deployment_status(
   if !has_deployment(DeploymentQueryBy::Id(deployment_id), &state.db).await? {
     return Err(AppError::DeploymentNotFound);
   }
-  jwt::verify::<String>(&agent_token, "agent_key")?;
-  let model = deployment::ActiveModel {
+  jwt::verify::<String>(&agent_token, &state.register_agent_key)?;
+  let deployment = deployment::ActiveModel {
     id: Set(deployment_id),
     status: Set(status),
     execution_time: Set(utc_now()),
@@ -35,5 +35,5 @@ pub async fn update_deployment_status(
   }
   .update(&state.db)
   .await?;
-  Ok(json!(model))
+  Ok(json!(deployment))
 }

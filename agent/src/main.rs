@@ -5,7 +5,7 @@ mod app;
 mod components;
 mod config;
 mod error;
-mod helpers;
+mod helper;
 mod response;
 mod rpc;
 

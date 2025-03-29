@@ -10,7 +10,6 @@ pub enum AppError {
   Authorization,
   UserNotFound,
   Forbidden,
-  HashPasswordError,
   UserExist,
   PasswordError,
   AgentExist,
@@ -30,14 +29,13 @@ impl AppError {
       AppError::Authorization => 1003,
       AppError::Forbidden => 1004,
       AppError::UserNotFound => 1005,
-      AppError::HashPasswordError => 1006,
       AppError::NotImplemented => 3000,
       AppError::UserExist => todo!(),
       AppError::PasswordError => todo!(),
       AppError::AgentExist => todo!(),
       AppError::AgentNotFound => 2001,
       AppError::DeploymentNotFound => todo!(),
-      AppError::AgentAuthFailed => todo!(),
+      AppError::AgentAuthFailed => 2003,
       AppError::RpcCallError => 3001,
     }
   }
@@ -48,7 +46,6 @@ impl AppError {
       AppError::Forbidden => "".to_string(),
       AppError::Authorization => "Authorization".to_string(),
       AppError::Database => "Database".to_string(),
-      AppError::HashPasswordError => "".to_string(),
       AppError::NotImplemented => "".to_string(),
       AppError::UserNotFound => "".to_string(),
       AppError::UserExist => "".to_string(),
@@ -56,7 +53,7 @@ impl AppError {
       AppError::AgentExist => "".to_string(),
       AppError::AgentNotFound => "Agent not found".to_string(),
       AppError::DeploymentNotFound => "".to_string(),
-      AppError::AgentAuthFailed => "".to_string(),
+      AppError::AgentAuthFailed => "Agent auth Failed".to_string(),
       AppError::RpcCallError => "Rpc call error".to_string(),
     }
   }

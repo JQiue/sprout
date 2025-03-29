@@ -5,7 +5,7 @@ use serde_json::{Value, json};
 use crate::{
   app::AppState,
   error::AppError,
-  helpers::{domian::generate_domain, nginx::NginxConfig},
+  helper::{NginxConfig, generate_domian},
   rpc::MasterRpc,
 };
 use helpers::{self, jwt};
@@ -24,7 +24,9 @@ pub async fn init_upload(state: &AppState, site_id: String) -> Result<Value, App
 }
 
 pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, AppError> {
-  jwt::verify::<String>(&form.upload_token, &state.upload_token_key)?;
+  let site_id = jwt::verify(&form.upload_token, &state.upload_token_key)?
+    .claims
+    .data;
   let base_dir = Path::new(&state.storage_path).join("./agent");
 
   if !base_dir.exists() {
@@ -36,6 +38,7 @@ pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, Ap
     let target_path = base_dir.join(filename);
     fs::copy(tempfile.file.path(), target_path)?;
   }
+
   MasterRpc::new(
     state.master_url.clone(),
     state.agent_token.clone(),
@@ -44,17 +47,17 @@ pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, Ap
   .update_deployment_status()
   .await?;
   // 申请测试域名
-  let domain = generate_domain();
+  let domian = generate_domian(site_id);
   let nginx_root_path = base_dir.canonicalize()?;
   println!("{:?}", nginx_root_path);
   let nginx_config = NginxConfig::new(
-    domain,
+    domian.clone(),
     nginx_root_path.to_string_lossy().to_string(),
     false,
     None,
   );
   if nginx_config.deploy(Path::new("/etc/nginx/sprout")) {
-    Ok(json!({}))
+    Ok(json!({ "domian": domian }))
   } else {
     Err(AppError::Error)
   }

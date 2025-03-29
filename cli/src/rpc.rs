@@ -1,11 +1,9 @@
-use std::{
-  fs,
-  path::{Path, PathBuf},
-};
+use std::path::PathBuf;
 
 use reqwest::multipart::{Form, Part};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use tracing::{debug, trace};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Response<T> {
@@ -29,15 +27,20 @@ pub struct DeployData {
   pub deploy_id: u32,
 }
 
-pub struct Rpc {
+pub struct MasterRpc {
   master_url: String,
   api_client: reqwest::Client,
 }
 
-impl Rpc {
-  pub fn new(master_url: String) -> Self {
+#[derive(Debug, Deserialize, Clone)]
+pub struct UploadData {
+  domian: String,
+}
+
+impl MasterRpc {
+  pub fn new() -> Self {
     Self {
-      master_url,
+      master_url: "http://127.0.0.1:3000".to_string(),
       api_client: reqwest::Client::new(),
     }
   }
@@ -56,36 +59,38 @@ impl Rpc {
     data.data.unwrap().token
   }
 
-  fn login() {}
+  // fn login() {}
 
-  pub async fn upload(&self, deploy_data: DeployData, path: PathBuf) {
-    println!("{:?}", path);
+  pub async fn upload(&self, upload_url: String, upload_token: String, path: PathBuf) {
+    println!(">>> {:?}", path);
     let path_buf = path.clone();
     let file_name = path
       .file_name()
       .and_then(|n| n.to_str())
       .map(|s| s.to_string())
       .unwrap_or_else(|| "unknown".to_string());
-    let part = reqwest::multipart::Part::file(path_buf)
+    let part = Part::file(path_buf)
       .await
       .unwrap()
       .file_name(file_name)
       .mime_str("application/octet-stream")
       .unwrap();
     let mut form = Form::new().part("dist", part);
-    form = form.part("upload_token", Part::text(deploy_data.upload_token));
+    form = form.part("upload_token", Part::text(upload_token));
+    println!(">>> upload file");
     let resp = self
       .api_client
-      .post(format!(
-        "http://{}:5001/api/upload/file",
-        deploy_data.upload_url
-      ))
+      .post(format!("http://{}:5001/api/upload/file", upload_url))
       .multipart(form)
       .send()
       .await
       .unwrap();
-    println!("{:?}", resp);
+    println!(">>> {:?}", resp);
+    let data = resp.json::<Response<UploadData>>().await.unwrap();
+    println!(">>> {:?}", data)
   }
+
+  pub async fn deploy_project(&self, site_id: String) {}
 
   pub async fn create_site(&self, token: String) -> DeployData {
     let resp = self

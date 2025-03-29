@@ -3,7 +3,7 @@ use std::time::Duration;
 use entity::deployment;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tracing::{debug, error};
+use tracing::debug;
 
 use crate::error::AppError;
 
@@ -19,6 +19,15 @@ pub struct InitUploadData {
   pub upload_token: String,
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct AgentHeartbeat {
+  pub cpu_cores: i8,
+  pub cpu_usage: f32,
+  pub total_memory: i32,
+  pub free_memory: i32,
+  pub memory_usage: f32,
+}
+
 pub struct AgentRpc {
   api_client: reqwest::Client,
 }
@@ -30,12 +39,23 @@ impl AgentRpc {
     }
   }
 
+  pub async fn get_agent_heartbeat(&self, agent_ip: String) -> Result<AgentHeartbeat, AppError> {
+    let resp = self
+      .api_client
+      .get(format!("http://{agent_ip}:5001/api/heartbeat"))
+      .send()
+      .await?;
+    let data = resp.json::<RpcResponse<AgentHeartbeat>>().await?;
+    Ok(data.data)
+  }
+
   pub async fn init_upload_session(
     &self,
     agent_ip: &str,
     deployment: deployment::Model,
   ) -> Result<InitUploadData, AppError> {
-    let resp = reqwest::Client::new()
+    let resp = self
+      .api_client
       .post(format!("http://{}:5001/api/upload/init", agent_ip))
       .timeout(Duration::from_secs(3))
       .json(&json!({

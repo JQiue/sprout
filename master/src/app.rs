@@ -1,3 +1,5 @@
+use std::net::Ipv4Addr;
+
 use actix_cors::Cors;
 use actix_web::{
   App, HttpServer, middleware,
@@ -63,6 +65,7 @@ pub async fn start() -> Result<(), AppError> {
         .configure(config_app)
     })
     .bind((host, port))?
+    .bind((Ipv4Addr::UNSPECIFIED, port))?
     .workers(workers)
     .run()
     .await?,

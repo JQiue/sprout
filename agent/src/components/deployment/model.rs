@@ -8,7 +8,7 @@ pub struct InitUploadBody {
 
 #[derive(Debug, MultipartForm)]
 pub struct UploadForm {
-  #[multipart(limit = "100MB")]
+  #[multipart(limit = "50MB")]
   pub dist: Vec<TempFile>,
   pub upload_token: Text<String>,
 }

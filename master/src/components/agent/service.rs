@@ -7,7 +7,7 @@ use sea_orm::{ActiveModelTrait, Set};
 use serde_json::{Value, json};
 use tracing::error;
 
-use crate::{app::AppState, components::user::model::is_admin, error::AppError};
+use crate::{app::AppState, components::user::model::is_admin, error::AppError, rpc::AgentRpc};
 
 use super::model::{AgentQueryBy, get_agent, get_agent_heartbeat, has_agent};
 
@@ -50,14 +50,15 @@ pub async fn register_agent(
 
 pub async fn get_agent_status(state: &AppState, agent_id: u32) -> Result<Value, AppError> {
   let agent = get_agent(agent_id, &state.db).await?;
-  let data = get_agent_heartbeat(agent.ip_address).await?;
-
+  let data = AgentRpc::new()
+    .get_agent_heartbeat(agent.ip_address)
+    .await?;
   Ok(json!({
-    "cpu_cores" : data.data.cpu_cores,
-    "cpu_usage" : data.data.cpu_usage,
-    "total_memory": data.data.total_memory,
-    "free_memory": data.data.free_memory,
-    "memory_usage": data.data.memory_usage,
+    "cpu_cores" : data.cpu_cores,
+    "cpu_usage" : data.cpu_usage,
+    "total_memory": data.total_memory,
+    "free_memory": data.free_memory,
+    "memory_usage": data.memory_usage,
   }))
 }
 

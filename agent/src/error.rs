@@ -4,10 +4,6 @@ use actix_web::{HttpResponse, ResponseError, http::StatusCode};
 pub enum AppError {
   Error,
   Env,
-  AuthFailed,
-  Forbidden,
-  ValidationFailed,
-  DeploymentNotFound,
   RpcCallError,
 }
 
@@ -15,10 +11,6 @@ impl AppError {
   pub fn code(&self) -> i32 {
     match self {
       AppError::Error => 1000,
-      AppError::AuthFailed => todo!(),
-      AppError::Forbidden => todo!(),
-      AppError::ValidationFailed => todo!(),
-      AppError::DeploymentNotFound => todo!(),
       AppError::Env => 1000,
       AppError::RpcCallError => 3000,
     }
@@ -26,10 +18,6 @@ impl AppError {
   pub fn message(&self) -> String {
     match self {
       AppError::Error => "error".to_string(),
-      AppError::AuthFailed => "认证失败".to_string(),
-      AppError::Forbidden => "".to_string(),
-      AppError::ValidationFailed => "".to_string(),
-      AppError::DeploymentNotFound => "".to_string(),
       AppError::Env => "".to_string(),
       AppError::RpcCallError => "".to_string(),
     }
