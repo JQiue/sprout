@@ -14,7 +14,8 @@ pub struct Config {
   pub workers: usize,
   pub host: String,
   pub port: u16,
-  pub agent_id: u8,
+  pub agent_id: u32,
+  pub agent_token: String,
   pub storage_path: String,
   pub master_url: String,
   pub upload_token_key: String,
@@ -23,7 +24,7 @@ pub struct Config {
 
 impl Config {
   pub fn from_env() -> Result<Config, AppError> {
-    dotenvy::dotenv_override();
+    dotenvy::dotenv_override()?;
     Ok(envy::from_env()?)
   }
 }

@@ -75,10 +75,7 @@ pub async fn init_upload_session(
     }))
     .send()
     .await?;
-  let data = resp.json::<InitUploadBody>().await.map_err(|err| {
-    error!("{}", err);
-    AppError::RpcCallError
-  })?;
+  let data = resp.json::<InitUploadBody>().await?;
   error!("Response body: {:?}", data);
   Ok(data)
 }

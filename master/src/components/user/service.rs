@@ -17,8 +17,7 @@ pub async fn generate_casual_user(state: &AppState) -> Result<Value, AppError> {
   let hashed = argon2(
     &nanoid(&Alphabet::DEFAULT, 8),
     &nanoid(&Alphabet::DEFAULT, 8),
-  )
-  .map_err(|_| AppError::HashPasswordError)?;
+  )?;
   let user_id = nanoid(&Alphabet::DEFAULT, 8);
   let token = jwt::sign(user_id.clone(), &state.login_token_key, 86400)?;
   user::ActiveModel {
@@ -70,7 +69,7 @@ pub async fn user_register(
   if is_first_user(&state.db).await? {
     user_type = "admin";
   }
-  let hashed = argon2(&password, "@QQ.wjq21").map_err(|_| AppError::HashPasswordError)?;
+  let hashed = argon2(&password, "@QQ.wjq21")?;
   let user_id = nanoid(&helpers::uuid::Alphabet::DEFAULT, 8);
   let user = user::ActiveModel {
     user_id: Set(user_id),

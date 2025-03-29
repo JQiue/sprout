@@ -71,6 +71,13 @@ impl From<reqwest::Error> for AppError {
   }
 }
 
+impl From<dotenvy::Error> for AppError {
+  fn from(err: dotenvy::Error) -> Self {
+    tracing::error!("{:#?}", err);
+    AppError::Env
+  }
+}
+
 impl ResponseError for AppError {
   fn status_code(&self) -> StatusCode {
     StatusCode::OK

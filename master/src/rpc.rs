@@ -1,12 +1,11 @@
 use std::time::Duration;
 
 use entity::deployment;
-use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tracing::{debug, error};
 
-use crate::{components::agent::model::get_agent, error::AppError, response::Response};
+use crate::error::AppError;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RpcResponse<T> {
@@ -45,13 +44,7 @@ impl AgentRpc {
       }))
       .send()
       .await?;
-    let data = resp
-      .json::<RpcResponse<InitUploadData>>()
-      .await
-      .map_err(|err| {
-        error!("{}", err);
-        AppError::RpcCallError
-      })?;
+    let data = resp.json::<RpcResponse<InitUploadData>>().await?;
     debug!("Response body: {:?}", data);
     Ok(data.data)
   }

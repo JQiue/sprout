@@ -2,15 +2,15 @@ use serde_json::json;
 
 use crate::{error::AppError, response::Response};
 
-struct MasterRpc {
-  agent_id: String,
+pub struct MasterRpc {
+  agent_id: u32,
   agent_token: String,
   master_url: String,
   api_client: reqwest::Client,
 }
 
 impl MasterRpc {
-  fn new(master_url: String, agent_token: String, agent_id: String) -> Self {
+  pub fn new(master_url: String, agent_token: String, agent_id: u32) -> Self {
     Self {
       agent_id,
       agent_token,

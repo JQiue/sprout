@@ -1,13 +1,13 @@
 use actix_cors::Cors;
 use actix_web::{
-  App, HttpResponse, HttpServer, middleware,
+  App, HttpServer, middleware,
   web::{self, ServiceConfig},
 };
 use sea_orm::DatabaseConnection;
 
 use crate::{
   components::{
-    agent::AgentComponent, deployment::DeploymentComponent, site::SiteComponent,
+    agent::AgentComponent, base, deployment::DeploymentComponent, site::SiteComponent,
     user::UserComponent,
   },
   config::Config,
@@ -23,12 +23,6 @@ pub struct AppState {
   pub register_agent_key_expire: i64,
 }
 
-async fn health_check() -> HttpResponse {
-  HttpResponse::Ok().json(serde_json::json!({
-    "status": "OK",
-  }))
-}
-
 pub fn config_app(cfg: &mut ServiceConfig) {
   cfg.service(
     web::scope("/api")
@@ -36,7 +30,7 @@ pub fn config_app(cfg: &mut ServiceConfig) {
       .configure(AgentComponent::config)
       .configure(SiteComponent::config)
       .configure(DeploymentComponent::config)
-      .route("/health", web::get().to(health_check)),
+      .route("/health", web::get().to(base::health_check)),
   );
 }
 

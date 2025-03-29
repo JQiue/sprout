@@ -34,7 +34,6 @@ pub async fn register_agent(
     &state.register_agent_key,
     state.register_agent_key_expire,
   )?;
-
   let active_agent = agent::ActiveModel {
     hostname: Set(hostname),
     ip_address: Set(ip_address),
@@ -51,10 +50,7 @@ pub async fn register_agent(
 
 pub async fn get_agent_status(state: &AppState, agent_id: u32) -> Result<Value, AppError> {
   let agent = get_agent(agent_id, &state.db).await?;
-  let data = get_agent_heartbeat(agent.ip_address).await.map_err(|err| {
-    error!("{}", err);
-    AppError::RpcCallError
-  })?;
+  let data = get_agent_heartbeat(agent.ip_address).await?;
 
   Ok(json!({
     "cpu_cores" : data.data.cpu_cores,
