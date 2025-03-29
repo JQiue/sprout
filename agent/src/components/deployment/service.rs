@@ -27,7 +27,7 @@ pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, Ap
   let site_id = jwt::verify::<String>(&form.upload_token, &state.upload_token_key)?
     .claims
     .data;
-  let base_dir = Path::new(&state.storage_path).join("./agent");
+  let base_dir = Path::new(&state.storage_path);
 
   if !base_dir.exists() {
     fs::create_dir_all(&base_dir)?;
@@ -54,7 +54,10 @@ pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, Ap
     site_id
   );
   // 解压 tar
-  extract_tar(nginx_root_path.clone() + ".tar");
+  extract_tar(
+    nginx_root_path.clone() + ".tar",
+    base_dir.canonicalize()?.to_string_lossy().to_string(),
+  );
   println!("{:?}", nginx_root_path);
   let nginx_config = NginxConfig::new(domian.clone(), nginx_root_path, false, None);
   if nginx_config.deploy(Path::new("/etc/nginx/sprout")) {

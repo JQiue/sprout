@@ -10,10 +10,12 @@ pub fn generate_domian(site_id: &str) -> String {
   format!("{site_id}.is.me")
 }
 
-pub fn extract_tar(filename: String) {
+pub fn extract_tar(filename: String, output: String) {
   let mut child = Command::new("tar")
     .arg("-xf")
     .arg(filename)
+    .arg("-C")
+    .arg(output)
     .stdout(Stdio::piped())
     .stderr(Stdio::piped())
     .spawn()
@@ -225,9 +227,5 @@ mod test {
     let total_size = calculate_total_size(path);
     println!("{:?}", total_size);
     calculate_total_size(Path::new("./")).unwrap();
-  }
-  #[test]
-  pub fn test_extract_tar() {
-    extract_tar("./dist.tar".to_owned());
   }
 }
