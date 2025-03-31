@@ -5,20 +5,19 @@ edition = "2021"
 
 [dependencies]
 aho-corasick = { workspace = true }
-dotenvy = { workspace = true }
-envy = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
-tracing = { workspace = true }
-tracing-subscriber = { workspace = true }
+# tracing = { workspace = true }
+# tracing-subscriber = { workspace = true }
 reqwest = { workspace = true, features = ["json", "multipart", "stream"] }
 helpers = { workspace = true, features = ["jwt", "rand"] }
-cloudflare = { workspace = true }
 tokio = { version = "1.44.1", features = ["full"] }
 clap = { version = "4.5.32", features = ["derive"] }
 indicatif = "0.17.11"
-console = { version = "0.15", default-features = false, features = [
+console = { version = "0.15.11", default-features = false, features = [
   "ansi-parsing",
 ] }
 tar = "0.4.44"
 rust-embed = "8.6.0"
+log = "0.4.27"
+env_logger = "0.11.7"

@@ -6,7 +6,6 @@ edition = "2024"
 [dependencies]
 actix-cors = { workspace = true }
 actix-web = { workspace = true }
-aho-corasick = { workspace = true }
 dotenvy = { workspace = true }
 envy = { workspace = true }
 serde = { workspace = true, features = ["derive"] }

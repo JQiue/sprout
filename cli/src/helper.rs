@@ -117,25 +117,6 @@ pub fn audit_file(
   Ok(matches)
 }
 
-/// Audits a directory for files containing specified keywords.
-///
-/// This function recursively traverses the given directory and its subdirectories,
-/// checking each file for the presence of specified keywords. It collects information
-/// about files that contain matches.
-///
-/// # Parameters
-///
-/// * `dir` - A reference to a `Path` representing the directory to audit.
-/// * `keywords` - A slice of `String`s containing the keywords to search for in each file.
-///
-/// # Returns
-///
-/// * `io::Result<Vec<FileInfo>>` - A Result containing either:
-///   - `Ok(Vec<FileInfo>)`: A vector of `FileInfo` structs, each representing a file
-///     that contains at least one of the specified keywords. The `FileInfo` includes
-///     the file path and the line numbers where matches were found.
-///   - `Err(std::io::Error)`: An I/O error if directory traversal or file reading fails.
-///
 pub fn audit_directory(
   dir: &Path,
   keywords: &[String],
@@ -186,36 +167,6 @@ pub fn load_keywords_from_embedded(file_paths: &[&str]) -> Vec<std::string::Stri
   keywords
 }
 
-/// Loads keywords from multiple files into a vector of strings.
-///
-/// This function reads each file specified in the input array, extracts non-empty lines,
-/// and collects them into a single vector of keywords.
-///
-/// # Parameters
-///
-/// * `file_paths` - A slice of string slices, where each string is a path to a file containing keywords.
-///
-/// # Returns
-///
-/// * `Result<Vec<String>, std::io::Error>` - A Result containing either:
-///   - `Ok(Vec<String>)`: A vector of strings, where each string is a non-empty line (trimmed) from the input files.
-///   - `Err(std::io::Error)`: An I/O error if file reading fails.
-///
-// pub fn load_keywords_from_files(file_paths: &[&str]) -> Result<Vec<String>, std::io::Error> {
-//   let mut keywords = Vec::new();
-//   for &file_path_str in file_paths {
-//     let file_path = Path::new(file_path_str);
-//     let reader = BufReader::new(File::open(file_path)?);
-//     for line_result in reader.lines() {
-//       let line = line_result?;
-//       if !line.trim().is_empty() {
-//         keywords.push(line.trim().to_string());
-//       }
-//     }
-//   }
-//   Ok(keywords)
-// }
-
 pub fn tar_directory(source: String, filename: String) -> PathBuf {
   let temp = temp_dir().join(format!("{filename}.tar"));
   println!(">>> tar dist to {:?}", temp.clone());
@@ -227,26 +178,8 @@ pub fn tar_directory(source: String, filename: String) -> PathBuf {
 
 #[cfg(test)]
 mod test {
-  use std::time::Instant;
-
   use super::*;
 
-  // #[test]
-  // pub fn test_audit_directory() {
-  //   let keywords = load_keywords_from_files(&vec![
-  //     "./涉枪涉爆违法信息关键词.txt",
-  //     "./色情类.txt",
-  //     "./政治类.txt",
-  //   ])
-  //   .unwrap();
-  //   let necative_keywords = load_keywords_from_files(&vec!["./否定关键词.txt"]).unwrap();
-  //   println!("keywords len: {}", keywords.len());
-  //   let start = Instant::now();
-  //   let res = audit_directory(Path::new("./dist"), &keywords, &necative_keywords).unwrap();
-  //   let duration = start.elapsed();
-  //   println!("duration: {}s", duration.as_secs_f32());
-  //   println!("{:#?}, len: {}", res, res.len());
-  // }
   #[test]
   pub fn test_tar_directory() {
     tar_directory("./".to_owned(), "cli.tar".to_owned());

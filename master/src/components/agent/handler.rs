@@ -27,7 +27,6 @@ pub async fn register_agent(
     ip_address,
     storage_path,
     available_space,
-    status,
   }) = body;
   match service::register_agent(
     &state,
@@ -36,7 +35,6 @@ pub async fn register_agent(
     ip_address,
     storage_path,
     available_space,
-    status,
   )
   .await
   {

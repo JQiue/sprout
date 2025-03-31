@@ -1,9 +1,9 @@
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter};
 
-use entity::user;
+use entity::user::{self, UserType};
 
 pub enum UserQueryBy<'a> {
-  Id(u32),
+  UserId(String),
   Email(&'a str),
 }
 
@@ -21,26 +21,26 @@ impl<'a> UserRepository<'a> {
     self.get_user(UserQueryBy::Email(email)).await
   }
 
-  pub async fn get_user_by_id(&self, id: u32) -> Result<Option<user::Model>, DbErr> {
-    self.get_user(UserQueryBy::Id(id)).await
+  pub async fn get_user_by_id(&self, id: String) -> Result<Option<user::Model>, DbErr> {
+    self.get_user(UserQueryBy::UserId(id)).await
   }
 
   async fn get_user(&self, query_by: UserQueryBy<'a>) -> Result<Option<user::Model>, DbErr> {
     let mut select = user::Entity::find();
     match query_by {
-      UserQueryBy::Id(id) => select = select.filter(user::Column::Id.eq(id)),
+      UserQueryBy::UserId(id) => select = select.filter(user::Column::UserId.eq(id)),
       UserQueryBy::Email(email) => select = select.filter(user::Column::Email.eq(email)),
     }
     select.one(self.db).await
   }
 
-  pub async fn is_admin_user(&self, email: &str) -> Result<bool, DbErr> {
+  pub async fn is_admin_user(&self, user_id: &str) -> Result<bool, DbErr> {
     let user = user::Entity::find()
-      .filter(user::Column::Email.eq(email))
+      .filter(user::Column::UserId.eq(user_id))
       .one(self.db)
       .await?;
     match user {
-      Some(user) => Ok(user.r#type == "administrator"),
+      Some(user) => Ok(user.r#type == UserType::Administrator),
       None => Ok(false),
     }
   }
@@ -57,18 +57,18 @@ impl<'a> UserRepository<'a> {
     user.update(self.db).await
   }
 
-  pub async fn has_user_by_id(&self, id: u32) -> Result<bool, DbErr> {
-    self.has_user(UserQueryBy::Id(id)).await
+  pub async fn has_user_by_id(&self, id: String) -> Result<bool, DbErr> {
+    self.has_user(UserQueryBy::UserId(id)).await
   }
 
   pub async fn has_user_by_email(&self, email: &str) -> Result<bool, DbErr> {
     self.has_user(UserQueryBy::Email(email)).await
   }
 
-  async fn has_user(&self, query_by: UserQueryBy<'a>) -> Result<bool, DbErr> {
+  pub async fn has_user(&self, query_by: UserQueryBy<'a>) -> Result<bool, DbErr> {
     let mut select = user::Entity::find();
     match query_by {
-      UserQueryBy::Id(id) => select = select.filter(user::Column::Id.eq(id)),
+      UserQueryBy::UserId(id) => select = select.filter(user::Column::UserId.eq(id)),
       UserQueryBy::Email(email) => select = select.filter(user::Column::Email.eq(email)),
     }
     let res = select.one(self.db).await?;

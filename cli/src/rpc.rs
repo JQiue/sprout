@@ -1,9 +1,9 @@
 use std::path::PathBuf;
 
+use log::trace;
 use reqwest::multipart::{Form, Part};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tracing::{debug, trace};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Response<T> {
@@ -54,7 +54,7 @@ impl MasterRpc {
       .unwrap();
 
     if resp.status() == 200 {}
-    println!("{:?}", resp);
+    trace!("{:?}", resp);
     let data = resp.json::<Response<GetCasualTokenData>>().await.unwrap();
     data.data.unwrap().token
   }
@@ -77,7 +77,7 @@ impl MasterRpc {
       .unwrap();
     let mut form = Form::new().part("dist", part);
     form = form.part("upload_token", Part::text(upload_token));
-    println!(">>> upload file");
+    trace!(">>> upload file");
     let resp = self
       .api_client
       .post(format!("http://{}:5001/api/upload/file", upload_url))
@@ -85,12 +85,12 @@ impl MasterRpc {
       .send()
       .await
       .unwrap();
-    println!(">>> {:?}", resp);
+    trace!(">>> {:?}", resp);
     let data = resp.json::<Response<UploadData>>().await.unwrap();
-    println!(">>> {:?}", data)
+    trace!(">>> {:?}", data)
   }
 
-  pub async fn deploy_project(&self, site_id: String) {}
+  pub async fn deploy_project(&self, _site_id: String) {}
 
   pub async fn create_site(&self, token: String) -> DeployData {
     let resp = self
@@ -104,22 +104,7 @@ impl MasterRpc {
       .await
       .unwrap();
     let data = resp.json::<Response<DeployData>>().await.unwrap();
-    println!("{:?}", data);
+    trace!("{:?}", data);
     data.data.unwrap()
   }
-  // pub async fn update_deployment_status(&self) {
-  //   let resp = self
-  //     .api_client
-  //     .post(format!("{}/api/deployment/status", self.master_url))
-  //     .json(&json!({
-  //       "agent_id": self.agent_id,
-  //       "agent_token": self.agent_token.to_string(),
-  //       "deployment_id": 1,
-  //       "status": "reviewing"
-  //     }))
-  //     .send()
-  //     .await;
-
-  //   let data = resp.json::<Response<()>>().await?;
-  // }
 }

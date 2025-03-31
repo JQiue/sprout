@@ -15,11 +15,13 @@ use crate::{
   config::Config,
   error::AppError,
   migration::migrate,
+  repository::RepositoryManager,
 };
 
 #[derive(Debug, Clone)]
 pub struct AppState {
   pub db: DatabaseConnection,
+  pub repo: RepositoryManager,
   pub login_token_key: String,
   pub register_agent_key: String,
   pub register_agent_key_expire: i64,
@@ -50,7 +52,8 @@ pub async fn start() -> Result<(), AppError> {
   let db = migrate(&database_url).await?;
   db.ping().await?;
   let state = AppState {
-    db,
+    db: db.clone(),
+    repo: RepositoryManager::new(db),
     login_token_key: login_token_key,
     register_agent_key: register_agent_key,
     register_agent_key_expire: register_agent_key_expire,

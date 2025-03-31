@@ -1,8 +1,18 @@
 use std::time::Duration;
 
+use serde::Serialize;
 use serde_json::json;
 
 use crate::{error::AppError, response::Response};
+
+#[derive(Debug, Serialize)]
+pub enum DeploymentStatus {
+  Pending,
+  Uploading,
+  Reviewing,
+  Published,
+  Failed,
+}
 
 pub struct MasterRpc {
   agent_id: u32,
@@ -20,7 +30,7 @@ impl MasterRpc {
       api_client: reqwest::Client::new(),
     }
   }
-  pub async fn update_deployment_status(&self) -> Result<(), AppError> {
+  pub async fn update_deployment_status(&self, status: DeploymentStatus) -> Result<(), AppError> {
     let resp = self
       .api_client
       .post(format!("{}/api/deployment/status", self.master_url))
@@ -28,7 +38,7 @@ impl MasterRpc {
         "agent_id": self.agent_id,
         "agent_token": self.agent_token.to_string(),
         "deployment_id": 1,
-        "status": "reviewing"
+        "status": status
       }))
       .timeout(Duration::from_secs(3))
       .send()

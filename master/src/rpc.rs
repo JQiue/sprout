@@ -68,21 +68,4 @@ impl AgentRpc {
     debug!("Response body: {:?}", data);
     Ok(data.data)
   }
-
-  // pub async fn update_deployment_status(&self) -> Result<(), AppError> {
-  //   let resp = self
-  //     .api_client
-  //     .post(format!("{}/api/deployment/status", self.master_url))
-  //     .json(&json!({
-  //       "agent_id": self.agent_id,
-  //       "agent_token": self.agent_token.to_string(),
-  //       "deployment_id": 1,
-  //       "status": "reviewing"
-  //     }))
-  //     .send()
-  //     .await?;
-
-  //   let data = resp.json::<Response<()>>().await?;
-  //   Ok(())
-  // }
 }

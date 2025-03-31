@@ -1,15 +1,9 @@
-use entity::agent;
-use helpers::{
-  jwt::{self, sign},
-  time::utc_now,
-};
+use entity::agent::{self, AgentStatus};
+use helpers::{jwt, time::utc_now};
 use sea_orm::{ActiveModelTrait, Set};
 use serde_json::{Value, json};
-use tracing::error;
 
-use crate::{app::AppState, components::user::model::is_admin, error::AppError, rpc::AgentRpc};
-
-use super::model::{AgentQueryBy, get_agent, get_agent_heartbeat, has_agent};
+use crate::{app::AppState, error::AppError, rpc::AgentRpc};
 
 pub async fn register_agent(
   state: &AppState,
@@ -18,13 +12,15 @@ pub async fn register_agent(
   ip_address: String,
   storage_path: String,
   available_space: u32,
-  status: String,
 ) -> Result<Value, AppError> {
-  if !is_admin(user_id, &state.db).await? {
+  if !state.repo.user().is_admin_user(&user_id).await? {
     return Err(AppError::Forbidden);
   }
-  if has_agent(AgentQueryBy::Hostname(hostname.clone()), &state.db).await?
-    || has_agent(AgentQueryBy::IpAddress(ip_address.clone()), &state.db).await?
+  if state
+    .repo
+    .agent()
+    .has_agent_by_ip(ip_address.clone())
+    .await?
   {
     return Err(AppError::AgentExist);
   }
@@ -39,7 +35,7 @@ pub async fn register_agent(
     ip_address: Set(ip_address),
     storage_path: Set(storage_path),
     available_space: Set(available_space),
-    status: Set(status),
+    status: Set(AgentStatus::Online),
     token: Set(token),
     created_at: Set(utc_now()),
     ..Default::default()
@@ -49,17 +45,20 @@ pub async fn register_agent(
 }
 
 pub async fn get_agent_status(state: &AppState, agent_id: u32) -> Result<Value, AppError> {
-  let agent = get_agent(agent_id, &state.db).await?;
-  let data = AgentRpc::new()
-    .get_agent_heartbeat(agent.ip_address)
-    .await?;
-  Ok(json!({
-    "cpu_cores" : data.cpu_cores,
-    "cpu_usage" : data.cpu_usage,
-    "total_memory": data.total_memory,
-    "free_memory": data.free_memory,
-    "memory_usage": data.memory_usage,
-  }))
+  if let Some(agent) = state.repo.agent().get_agent(agent_id).await? {
+    let data = AgentRpc::new()
+      .get_agent_heartbeat(agent.ip_address)
+      .await?;
+    Ok(json!({
+      "cpu_cores" : data.cpu_cores,
+      "cpu_usage" : data.cpu_usage,
+      "total_memory": data.total_memory,
+      "free_memory": data.free_memory,
+      "memory_usage": data.memory_usage,
+    }))
+  } else {
+    Err(AppError::AgentNotFound)
+  }
 }
 
 pub async fn refresh_agent_token(
@@ -67,29 +66,29 @@ pub async fn refresh_agent_token(
   user_id: String,
   agent_id: u32,
 ) -> Result<Value, AppError> {
-  if !is_admin(user_id, &state.db).await? {
+  if !state.repo.user().is_admin_user(&user_id).await? {
     return Err(AppError::Forbidden);
   }
-  if !has_agent(AgentQueryBy::Id(agent_id.clone()), &state.db).await? {
+  if !state.repo.agent().has_agent_by_id(agent_id).await? {
     return Err(AppError::AgentNotFound);
   }
 
-  let token = sign::<String>(
+  let token = jwt::sign::<String>(
     agent_id.to_string(),
     &state.register_agent_key,
     state.register_agent_key_expire,
   )?;
-
-  agent::ActiveModel {
-    id: Set(agent_id),
-    token: Set(token.clone()),
-    updated_at: Set(Some(utc_now())),
-    ..Default::default()
-  }
-  .update(&state.db)
-  .await?;
-
+  let agent = state
+    .repo
+    .agent()
+    .update_agent(agent::ActiveModel {
+      id: Set(agent_id),
+      token: Set(token.clone()),
+      updated_at: Set(Some(utc_now())),
+      ..Default::default()
+    })
+    .await?;
   Ok(json!({
-    "token": token
+    "token": agent.token
   }))
 }

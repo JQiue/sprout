@@ -5,6 +5,7 @@ use std::{
   path::Path,
   process::{Command, Stdio},
 };
+use tracing::{error, trace};
 
 pub fn generate_domian(site_id: &str) -> String {
   format!("{site_id}.is.me")
@@ -25,15 +26,15 @@ pub fn extract_tar(filename: String, output: String) {
   let stdout_reader = BufReader::new(stdout);
   for line in stdout_reader.lines() {
     match line {
-      Ok(line) => println!("{}", line),
-      Err(e) => println!("Error reading stdout: {}", e),
+      Ok(line) => trace!("{}", line),
+      Err(e) => error!("Error reading stdout: {}", e),
     }
   }
   let stderr_reader = BufReader::new(stderr);
   for line in stderr_reader.lines() {
     match line {
-      Ok(line) => println!("{}", line),
-      Err(e) => println!("Error reading stderr: {}", e),
+      Ok(line) => trace!("{}", line),
+      Err(e) => error!("Error reading stderr: {}", e),
     }
   }
   let status = child.wait().expect("Failed to wait for build process");

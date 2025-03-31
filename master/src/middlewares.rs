@@ -1,11 +1,10 @@
+use entity::user::UserType;
 // use actix_web::{Error, HttpMessage, HttpResponse, dev::ServiceRequest, error::InternalError, web};
 // use actix_web_httpauth::extractors::bearer::BearerAuth;
 // use helpers::jwt;
 use serde::{Deserialize, Serialize};
 
-use crate::{
-  app::AppState, components::user::model::UserType, error::AppError, response::Response,
-};
+use crate::{app::AppState, error::AppError, response::Response};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct JwtPayload {

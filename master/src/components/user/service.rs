@@ -1,14 +1,14 @@
-use entity::user;
+use entity::user::{self, UserStatus, UserType};
 use helpers::{
   hash::{argon2, verify_argon2},
   jwt,
   time::utc_now,
   uuid::{Alphabet, nanoid},
 };
-use sea_orm::{ActiveModelTrait, Set};
+use sea_orm::Set;
 use serde_json::{Value, json};
 
-use crate::{app::AppState, components::user::model::*, error::AppError};
+use crate::{app::AppState, error::AppError};
 
 pub async fn generate_casual_user(state: &AppState) -> Result<Value, AppError> {
   let user_type = "casual";
@@ -20,18 +20,17 @@ pub async fn generate_casual_user(state: &AppState) -> Result<Value, AppError> {
   )?;
   let user_id = nanoid(&Alphabet::DEFAULT, 8);
   let token = jwt::sign(user_id.clone(), &state.login_token_key, 86400)?;
-  user::ActiveModel {
+  let active_user = user::ActiveModel {
     user_id: Set(user_id),
     nickname: Set(nickname),
     email: Set(email),
     password: Set(hashed),
-    status: Set("active".to_string()),
-    r#type: Set(user_type.to_string()),
+    status: Set(UserStatus::Active),
+    r#type: Set(UserType::Casual),
     created_at: Set(utc_now()),
     ..Default::default()
-  }
-  .insert(&state.db)
-  .await?;
+  };
+  state.repo.user().create_user(active_user).await?;
   Ok(json!({ "token": token }))
 }
 
@@ -62,27 +61,26 @@ pub async fn user_register(
   email: String,
   password: String,
 ) -> Result<Value, AppError> {
-  if has_user(UserQueryBy::Email(email.clone()), &state.db).await? {
+  if state.repo.user().has_user_by_email(&email).await? {
     return Err(AppError::UserExist);
   }
-  let mut user_type = "normal";
-  if is_first_user(&state.db).await? {
-    user_type = "admin";
+  let mut user_type = UserType::Normal;
+  if state.repo.user().is_first_user().await? {
+    user_type = UserType::Administrator;
   }
-  let hashed = argon2(&password, "@QQ.wjq21")?;
-  let user_id = nanoid(&helpers::uuid::Alphabet::DEFAULT, 8);
-  let user = user::ActiveModel {
+  let hashed = argon2(&password, &nanoid(&Alphabet::DEFAULT, 8))?;
+  let user_id = nanoid(&Alphabet::DEFAULT, 8);
+  let active_user = user::ActiveModel {
     user_id: Set(user_id),
     nickname: Set(nickname),
     email: Set(email),
     password: Set(hashed),
-    status: Set("active".to_string()),
-    r#type: Set(user_type.to_string()),
+    status: Set(UserStatus::Active),
+    r#type: Set(user_type),
     created_at: Set(utc_now()),
     ..Default::default()
-  }
-  .insert(&state.db)
-  .await?;
+  };
+  let user = state.repo.user().create_user(active_user).await?;
   Ok(json!({ "insert_id": user.id }))
 }
 
@@ -107,28 +105,31 @@ pub async fn user_login(
   email: String,
   password: String,
 ) -> Result<Value, AppError> {
-  if !has_user(UserQueryBy::Email(email.clone()), &state.db).await? {
-    return Err(AppError::UserNotFound);
-  }
-  let user = get_user(UserQueryBy::Email(email), &state.db).await?;
-  if verify_argon2(&user.password, &password)? {
-    let token = jwt::sign(user.user_id, &state.login_token_key, 86400)?;
-    Ok(json!({
-      "token": token
-    }))
+  if let Some(user) = state.repo.user().get_user_by_email(&email).await? {
+    if verify_argon2(&user.password, &password)? {
+      let token = jwt::sign(user.user_id, &state.login_token_key, 86400)?;
+      Ok(json!({
+        "token": token
+      }))
+    } else {
+      Err(AppError::PasswordError)
+    }
   } else {
-    Err(AppError::PasswordError)
+    Err(AppError::UserNotFound)
   }
 }
 
 pub async fn get_user_info(state: &AppState, user_id: String) -> Result<Value, AppError> {
-  let model = get_user(UserQueryBy::UserId(user_id), &state.db).await?;
-  Ok(json!({
-      "user_id": model.user_id,
-      "nickname": model.nickname,
-      "email": model.email,
-      "status": model.status
-  }))
+  if let Some(user) = state.repo.user().get_user_by_id(user_id).await? {
+    Ok(json!({
+        "user_id": user.user_id,
+        "nickname": user.nickname,
+        "email": user.email,
+        "status": user.status
+    }))
+  } else {
+    Err(AppError::UserNotFound)
+  }
 }
 
 pub async fn set_user_password(
