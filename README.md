@@ -94,6 +94,7 @@
 | `POST /api/site`                      | 创建 Site             |
 | `DELETE /api/site`                    | 删除 Site             |
 | `GET /api/deployment/{deployment_id}` | 获取部署信息          |
+| `POST /api/deployment`                | 创建部署信息          |
 | `POST /api/deployment/status`         | 更新部署信息          |
 | `POST /api/agent`                     | 创建 Agent            |
 | `GET /api/agent/{agent_id}`           | 获取 Agent 的系统状态 |

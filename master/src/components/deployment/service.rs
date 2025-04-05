@@ -1,9 +1,48 @@
 use entity::deployment::{self, DeploymentStatus};
 use helpers::{jwt, time::utc_now};
-use sea_orm::Set;
+use sea_orm::{IntoActiveModel, Set};
 use serde_json::{Value, json};
+use tracing::info;
 
 use crate::{app::AppState, error::AppError};
+
+pub async fn create_deployment(state: &AppState, site_id: String) -> Result<Value, AppError> {
+  if let Some(agent) = state.repo.agent().get_avaliable_agent().await? {
+    let deployment = state
+      .repo
+      .deployment()
+      .create_deployment(deployment::ActiveModel {
+        status: Set(DeploymentStatus::Pending),
+        agent_id: Set(agent.id),
+        site_id: Set(site_id.clone()),
+        execution_time: Set(utc_now()),
+        created_at: Set(utc_now()),
+        ..Default::default()
+      })
+      .await?;
+    let agent_rpc = rpc::Agent::Rpc::new();
+    let init_response = agent_rpc
+      .init_upload_session(&agent.ip_address, &deployment.site_id, deployment.id)
+      .await?;
+    let mut active_deployment = deployment.into_active_model();
+    active_deployment.status = Set(DeploymentStatus::Uploading);
+    active_deployment.upload_token = Set(Some(init_response.upload_token.clone()));
+    let deployment = state
+      .repo
+      .deployment()
+      .update_deployment(active_deployment)
+      .await?;
+    Ok(json!({
+        "upload_url": agent.ip_address,
+        "upload_token": init_response.upload_token,
+        "site_id": site_id,
+        "agent_id": deployment.agent_id,
+        "deploy_id": deployment.id,
+    }))
+  } else {
+    Err(AppError::AgentNotFound)
+  }
+}
 
 pub async fn get_deployment_info(state: &AppState, deployment_id: u32) -> Result<Value, AppError> {
   if let Some(deployment) = state
@@ -31,6 +70,7 @@ pub async fn update_deployment_status(
     .get_agent(agent_id)
     .await?
     .ok_or(AppError::AgentNotFound)?;
+
   if agent.token != agent_token {
     return Err(AppError::AgentAuthFailed);
   }
@@ -42,8 +82,9 @@ pub async fn update_deployment_status(
   {
     return Err(AppError::DeploymentNotFound);
   }
+  info!(">>> {:?}", status);
   jwt::verify::<String>(&agent_token, &state.register_agent_key)?;
-  let deployment = state
+  state
     .repo
     .deployment()
     .update_deployment(deployment::ActiveModel {
@@ -53,5 +94,5 @@ pub async fn update_deployment_status(
       ..Default::default()
     })
     .await?;
-  Ok(json!(deployment))
+  Ok(json!(()))
 }

@@ -4,11 +4,24 @@ use actix_web::{
 };
 
 use crate::{
-  app::AppState, components::deployment::model::UpdateDeploymentStatusBody, error::AppError,
+  app::AppState,
+  components::deployment::model::{CreateDeploymentBody, UpdateDeploymentStatusBody},
+  error::AppError,
   response::Response,
 };
 
 use super::service;
+
+#[post("/deployment")]
+pub async fn create_deployment(
+  state: Data<AppState>,
+  body: Json<CreateDeploymentBody>,
+) -> Result<HttpResponse, AppError> {
+  match service::create_deployment(&state, body.0.site_id).await {
+    Ok(data) => Response::success(Some(data)),
+    Err(err) => Response::<()>::error(err),
+  }
+}
 
 #[get("/deployment/{deployment_id}")]
 pub async fn get_deployment_info(

@@ -3,7 +3,7 @@ use helpers::{jwt, time::utc_now};
 use sea_orm::{ActiveModelTrait, Set};
 use serde_json::{Value, json};
 
-use crate::{app::AppState, error::AppError, rpc::AgentRpc};
+use crate::{app::AppState, error::AppError};
 
 pub async fn register_agent(
   state: &AppState,
@@ -46,7 +46,7 @@ pub async fn register_agent(
 
 pub async fn get_agent_status(state: &AppState, agent_id: u32) -> Result<Value, AppError> {
   if let Some(agent) = state.repo.agent().get_agent(agent_id).await? {
-    let data = AgentRpc::new()
+    let data = rpc::Agent::Rpc::new()
       .get_agent_heartbeat(agent.ip_address)
       .await?;
     Ok(json!({

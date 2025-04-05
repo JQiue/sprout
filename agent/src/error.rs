@@ -11,16 +11,23 @@ impl AppError {
   pub fn code(&self) -> i32 {
     match self {
       AppError::Error => 1000,
-      AppError::Env => 1000,
-      AppError::RpcCallError => 3000,
+      AppError::Env => 1001,
+      AppError::RpcCallError => 1002,
     }
   }
   pub fn message(&self) -> String {
     match self {
-      AppError::Error => "error".to_string(),
-      AppError::Env => "".to_string(),
-      AppError::RpcCallError => "".to_string(),
+      AppError::Error => "Error".to_string(),
+      AppError::Env => "Env error".to_string(),
+      AppError::RpcCallError => "Rpc call error".to_string(),
     }
+  }
+}
+
+impl From<rpc::error::AppError> for AppError {
+  fn from(err: rpc::error::AppError) -> Self {
+    tracing::error!("{:#?}", err);
+    AppError::RpcCallError
   }
 }
 

@@ -7,7 +7,6 @@ mod config;
 mod error;
 mod helper;
 mod response;
-mod rpc;
 
 #[actix_web::main]
 async fn main() -> Result<(), error::AppError> {

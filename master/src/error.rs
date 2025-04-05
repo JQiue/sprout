@@ -29,13 +29,13 @@ impl AppError {
       AppError::Authorization => 1003,
       AppError::Forbidden => 1004,
       AppError::UserNotFound => 1005,
+      AppError::UserExist => 1006,
+      AppError::PasswordError => 1007,
       AppError::NotImplemented => 3000,
-      AppError::UserExist => todo!(),
-      AppError::PasswordError => todo!(),
-      AppError::AgentExist => todo!(),
+      AppError::AgentExist => 2000,
       AppError::AgentNotFound => 2001,
-      AppError::DeploymentNotFound => todo!(),
-      AppError::AgentAuthFailed => 2003,
+      AppError::AgentAuthFailed => 2002,
+      AppError::DeploymentNotFound => 2003,
       AppError::RpcCallError => 3001,
     }
   }
@@ -43,16 +43,16 @@ impl AppError {
     match self {
       AppError::Error => "err".to_string(),
       AppError::Env => "Env".to_string(),
-      AppError::Forbidden => "".to_string(),
+      AppError::Forbidden => "Forbidden".to_string(),
       AppError::Authorization => "Authorization".to_string(),
       AppError::Database => "Database".to_string(),
-      AppError::NotImplemented => "".to_string(),
-      AppError::UserNotFound => "".to_string(),
-      AppError::UserExist => "".to_string(),
-      AppError::PasswordError => "".to_string(),
-      AppError::AgentExist => "".to_string(),
+      AppError::NotImplemented => "Not implemented".to_string(),
+      AppError::UserNotFound => "User not found".to_string(),
+      AppError::UserExist => "User exist".to_string(),
+      AppError::PasswordError => "Password error".to_string(),
+      AppError::AgentExist => "Agent exist".to_string(),
       AppError::AgentNotFound => "Agent not found".to_string(),
-      AppError::DeploymentNotFound => "".to_string(),
+      AppError::DeploymentNotFound => "Deployment not found".to_string(),
       AppError::AgentAuthFailed => "Agent auth Failed".to_string(),
       AppError::RpcCallError => "Rpc call error".to_string(),
     }
@@ -122,5 +122,12 @@ impl From<helpers::hash::Error> for AppError {
   fn from(err: helpers::hash::Error) -> Self {
     tracing::error!("{:#?}", err);
     AppError::Error
+  }
+}
+
+impl From<rpc::error::AppError> for AppError {
+  fn from(err: rpc::error::AppError) -> Self {
+    tracing::error!("{:#?}", err);
+    AppError::RpcCallError
   }
 }

@@ -9,7 +9,7 @@ enum User {
   Nickname,        // 昵称
   Password,        // 密码
   Email,           // 邮箱
-  Type,            // casual, paying, admin
+  Type,            // casual, paying, administrator
   Status,          // active, deleted
   IsEmailVerified, // 邮箱是否验证
   IsPhoneVerified, // 手机是否验证
@@ -54,7 +54,7 @@ impl MigrationTrait for Migration {
           .col(
             string(User::Type)
               .default("casual")
-              .comment("casual, paying, admin"),
+              .comment("casual, paying, administrator"),
           )
           .col(
             string(User::Status)

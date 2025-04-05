@@ -280,7 +280,6 @@ dependencies = [
  "helpers",
  "mockall",
  "reqwest",
- "rpc",
  "serde",
  "serde_json",
  "sysinfo",
@@ -2339,7 +2338,6 @@ dependencies = [
  "helpers",
  "migration",
  "reqwest",
- "rpc",
  "sea-orm",
  "serde",
  "serde_json",
@@ -3202,16 +3200,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
-]
-
-[[package]]
-name = "rpc"
-version = "0.1.0"
-dependencies = [
- "reqwest",
- "serde",
- "serde_json",
- "tracing",
 ]
 
 [[package]]

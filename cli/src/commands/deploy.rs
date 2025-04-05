@@ -1,14 +1,17 @@
-use core::panic;
 use std::{
   fs,
   io::{BufRead, BufReader},
+  panic,
   path::Path,
   process::{Command, Stdio},
   time::Duration,
 };
 
 use crate::{
-  helper::{audit_directory, load_keywords_from_embedded, tar_directory},
+  helper::{
+    audit_directory, get_project_config, load_keywords_from_embedded, set_project_config,
+    tar_directory,
+  },
   rpc, Cli,
 };
 use clap::Parser;
@@ -122,13 +125,21 @@ async fn deploy_project(path: String) -> String {
     let rpc = MasterRpc::new();
     let token = rpc.get_casual_token().await;
     let deploy_data = rpc.create_site(token).await;
+    let mut project_config = get_project_config();
+    project_config.site_id = Some(deploy_data.site_id.clone());
+    set_project_config(project_config);
     let path = tar_directory(path.clone(), deploy_data.clone().site_id);
     trace!("{:?}", deploy_data);
-    rpc
-      .upload(deploy_data.upload_url, deploy_data.upload_token, path)
+    let domian = rpc
+      .upload(
+        deploy_data.upload_url,
+        deploy_data.upload_token,
+        deploy_data.deploy_id,
+        path,
+      )
       .await;
-    rpc.deploy_project(deploy_data.site_id).await;
-    "root.is.me".to_string()
+    // rpc.deploy_project(deploy_data.site_id).await;
+    domian
   }
 }
 

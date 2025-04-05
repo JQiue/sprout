@@ -37,6 +37,11 @@ pub struct UploadData {
   domian: String,
 }
 
+#[derive(Debug, Deserialize, Clone)]
+pub struct LoginData {
+  token: String,
+}
+
 impl MasterRpc {
   pub fn new() -> Self {
     Self {
@@ -52,16 +57,38 @@ impl MasterRpc {
       .send()
       .await
       .unwrap();
-
-    if resp.status() == 200 {}
     trace!("{:?}", resp);
     let data = resp.json::<Response<GetCasualTokenData>>().await.unwrap();
     data.data.unwrap().token
   }
 
-  // fn login() {}
+  pub async fn login(&self, username: String, password: String) -> std::string::String {
+    let resp = self
+      .api_client
+      .post(format!("{}/api/user/token", self.master_url))
+      .json(&json!({
+        "email": username,
+        "password": password
+      }))
+      .send()
+      .await
+      .unwrap();
+    trace!(">>> resp {:?}", resp);
+    let data = resp.json::<Response<LoginData>>().await.unwrap();
+    trace!(">>> data {:?}", data);
+    if data.code != 0 {
+      panic!("login failed: {}", data.msg);
+    }
+    data.data.unwrap().token
+  }
 
-  pub async fn upload(&self, upload_url: String, upload_token: String, path: PathBuf) {
+  pub async fn upload(
+    &self,
+    upload_url: String,
+    upload_token: String,
+    deployment_id: u32,
+    path: PathBuf,
+  ) -> std::string::String {
     println!(">>> {:?}", path);
     let path_buf = path.clone();
     let file_name = path
@@ -77,6 +104,7 @@ impl MasterRpc {
       .unwrap();
     let mut form = Form::new().part("dist", part);
     form = form.part("upload_token", Part::text(upload_token));
+    form = form.part("deployment_id", Part::text(deployment_id.to_string()));
     trace!(">>> upload file");
     let resp = self
       .api_client
@@ -87,7 +115,8 @@ impl MasterRpc {
       .unwrap();
     trace!(">>> {:?}", resp);
     let data = resp.json::<Response<UploadData>>().await.unwrap();
-    trace!(">>> {:?}", data)
+    trace!(">>> {:?}", data);
+    data.data.unwrap().domian
   }
 
   pub async fn deploy_project(&self, _site_id: String) {}

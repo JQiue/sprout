@@ -1,5 +1,5 @@
 [workspace]
-members = ["master", "agent", "cli", "migration", "entity"]
+members = ["master", "agent", "cli", "migration", "entity", "rpc"]
 
 [workspace.dependencies]
 actix-cors = "0.7.1"
@@ -22,3 +22,4 @@ mockall = "0.13.1"
 cloudflare = "0.14.0"
 entity = { path = "./entity" }
 migration = { path = "./migration" }
+rpc = { path = "./rpc" }

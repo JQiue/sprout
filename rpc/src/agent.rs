@@ -1,6 +1,5 @@
 use std::time::Duration;
 
-use entity::deployment;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tracing::debug;
@@ -28,11 +27,11 @@ pub struct AgentHeartbeat {
   pub memory_usage: f32,
 }
 
-pub struct AgentRpc {
+pub struct Rpc {
   api_client: reqwest::Client,
 }
 
-impl AgentRpc {
+impl Rpc {
   pub fn new() -> Self {
     Self {
       api_client: reqwest::Client::new(),
@@ -52,15 +51,16 @@ impl AgentRpc {
   pub async fn init_upload_session(
     &self,
     agent_ip: &str,
-    deployment: deployment::Model,
+    site_id: &str,
+    deploy_id: u32,
   ) -> Result<InitUploadData, AppError> {
     let resp = self
       .api_client
       .post(format!("http://{}:5001/api/upload/init", agent_ip))
       .timeout(Duration::from_secs(3))
       .json(&json!({
-        "site_id": deployment.site_id,
-        "deploy_id": deployment.id
+        "site_id": site_id,
+        "deploy_id": deploy_id
       }))
       .send()
       .await?;

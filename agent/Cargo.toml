@@ -19,6 +19,7 @@ reqwest = { workspace = true, features = ["json"] }
 sysinfo = { workspace = true }
 actix-multipart = { workspace = true }
 helpers = { workspace = true, features = ["jwt"] }
+rpc = { workspace = true }
 
 [dev-dependencies]
 mockall = { workspace = true }

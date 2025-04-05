@@ -7,6 +7,7 @@ use std::{
 };
 
 use aho_corasick::AhoCorasick;
+use serde::{Deserialize, Serialize};
 use tar::Builder;
 
 use crate::assets::Asset;
@@ -174,6 +175,68 @@ pub fn tar_directory(source: String, filename: String) -> PathBuf {
   builder.append_dir_all(filename, source).unwrap();
   builder.finish().unwrap();
   temp
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CliConfig {
+  pub token: Option<String>,
+}
+
+pub fn get_cli_config() -> CliConfig {
+  if let Some(home) = dirs::home_dir() {
+    if !fs::exists(home.join("./.pupup/config.json")).unwrap() {
+      fs::create_dir_all(home.join("./.pupup")).unwrap();
+      fs::write(home.join("./.pupup/config.json"), "{}").unwrap();
+    }
+    let config_str = fs::read_to_string(home.join("./.pupup/config.json")).unwrap();
+    let config = serde_json::from_str::<CliConfig>(&config_str).unwrap();
+    return config;
+  } else {
+    panic!("Faild to get home directory");
+  }
+}
+
+pub fn set_cli_config(config: CliConfig) {
+  if let Some(home) = dirs::home_dir() {
+    if !fs::exists(home.join("./.pupup/config.json")).unwrap() {
+      fs::create_dir(home.join("./.pupup")).unwrap();
+    }
+    fs::write(
+      home.join("./.pupup/config.json"),
+      serde_json::to_string(&config).unwrap(),
+    )
+    .unwrap();
+  } else {
+    panic!("Faild to get home directory");
+  }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ProjectConfig {
+  pub site_id: Option<String>,
+}
+
+pub fn get_project_config() -> ProjectConfig {
+  if !fs::exists("./.pupup/config.json").unwrap() {
+    fs::create_dir_all(".pupup").unwrap();
+    fs::write("./.pupup/config.json", "{}").unwrap();
+  }
+
+  let config_str = fs::read_to_string("./.pupup/config.json").unwrap();
+  let config = serde_json::from_str::<ProjectConfig>(&config_str).unwrap();
+  config
+}
+
+pub fn set_project_config(config: ProjectConfig) {
+  if !fs::exists("./.pupup/config.json").unwrap() {
+    fs::create_dir_all(".pupup").unwrap();
+    fs::write("./.pupup/config.json", "{}").unwrap();
+  }
+  fs::write(
+    "./.pupup/config.json",
+    serde_json::to_string(&config).unwrap(),
+  )
+  .unwrap();
 }
 
 #[cfg(test)]

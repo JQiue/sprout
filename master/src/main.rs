@@ -11,7 +11,6 @@ mod middlewares;
 mod migration;
 mod repository;
 mod response;
-mod rpc;
 
 #[actix_web::main]
 async fn main() -> Result<(), error::AppError> {

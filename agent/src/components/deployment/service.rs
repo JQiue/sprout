@@ -1,12 +1,12 @@
 use std::{fs, path::Path};
 
+use rpc::Master::DeploymentStatus;
 use serde_json::{Value, json};
 
 use crate::{
   app::AppState,
   error::AppError,
   helper::{NginxConfig, extract_tar, generate_domian},
-  rpc::{DeploymentStatus, MasterRpc},
 };
 use helpers::{self, jwt};
 
@@ -39,11 +39,12 @@ pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, Ap
     fs::copy(tempfile.file.path(), target_path)?;
   }
 
-  let master_rpc = MasterRpc::new(
+  let master_rpc = rpc::Master::Rpc::new(
     state.master_url.clone(),
     state.agent_token.clone(),
     state.agent_id,
   );
+
   master_rpc
     .update_deployment_status(DeploymentStatus::Reviewing)
     .await?;
