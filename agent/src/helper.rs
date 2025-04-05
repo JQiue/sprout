@@ -45,37 +45,6 @@ pub fn extract_tar(filename: String, output: String) {
   }
 }
 
-// 遍历目录下的所有文件和子目录，并对每个文件调用回调函数
-fn visit_dirs<F>(dir: &Path, callback: &mut F) -> io::Result<()>
-where
-  F: FnMut(&Path) -> io::Result<()>,
-{
-  if dir.is_dir() {
-    for entry in fs::read_dir(dir)? {
-      let path = entry?.path();
-      if path.is_dir() {
-        visit_dirs(&path, callback)?;
-      } else {
-        callback(&path)?;
-      }
-    }
-  }
-  Ok(())
-}
-
-// 使用示例：统计文件大小
-pub fn calculate_total_size(path: &Path) -> io::Result<u64> {
-  let mut total_size = 0;
-  let mut size_callback = |path: &Path| -> io::Result<()> {
-    let metadata = fs::metadata(path)?;
-    total_size += metadata.len();
-    Ok(())
-  };
-
-  visit_dirs(path, &mut size_callback)?;
-  Ok(total_size)
-}
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct NginxConfig {
   domain: String,
@@ -218,15 +187,7 @@ impl NginxConfig {
 
 #[cfg(test)]
 mod test {
-  use super::*;
-  use std::path::Path;
 
   #[test]
-  pub fn test() {
-    let path = Path::new("./sprout/dist");
-    println!("{:?}", path);
-    let total_size = calculate_total_size(path);
-    println!("{:?}", total_size);
-    calculate_total_size(Path::new("./")).unwrap();
-  }
+  pub fn test() {}
 }

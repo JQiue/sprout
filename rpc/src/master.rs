@@ -14,6 +14,7 @@ pub struct Response<T> {
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "lowercase")]
 pub enum DeploymentStatus {
   Pending,
   Uploading,
@@ -38,14 +39,19 @@ impl Rpc {
       api_client: reqwest::Client::new(),
     }
   }
-  pub async fn update_deployment_status(&self, status: DeploymentStatus) -> Result<(), AppError> {
+
+  pub async fn update_deployment_status(
+    &self,
+    deployment_id: u32,
+    status: DeploymentStatus,
+  ) -> Result<(), AppError> {
     let resp = self
       .api_client
       .post(format!("{}/api/deployment/status", self.master_url))
       .json(&json!({
         "agent_id": self.agent_id,
         "agent_token": self.agent_token.to_string(),
-        "deployment_id": 1,
+        "deployment_id": deployment_id,
         "status": status
       }))
       .timeout(Duration::from_secs(3))

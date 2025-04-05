@@ -2,6 +2,7 @@ use std::{fs, path::Path};
 
 use rpc::Master::DeploymentStatus;
 use serde_json::{Value, json};
+use tracing::trace;
 
 use crate::{
   app::AppState,
@@ -44,9 +45,8 @@ pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, Ap
     state.agent_token.clone(),
     state.agent_id,
   );
-
   master_rpc
-    .update_deployment_status(DeploymentStatus::Reviewing)
+    .update_deployment_status(*form.deployment_id, DeploymentStatus::Reviewing)
     .await?;
   // 申请域名
   let domian = generate_domian(&site_id);
@@ -60,11 +60,11 @@ pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, Ap
     nginx_root_path.clone() + ".tar",
     base_dir.canonicalize()?.to_string_lossy().to_string(),
   );
-  println!("{:?}", nginx_root_path);
+  trace!("{:?}", nginx_root_path);
   let nginx_config = NginxConfig::new(domian.clone(), nginx_root_path, false, None);
   if nginx_config.deploy(Path::new("/etc/nginx/sprout")) {
     master_rpc
-      .update_deployment_status(DeploymentStatus::Published)
+      .update_deployment_status(*form.deployment_id, DeploymentStatus::Published)
       .await?;
     Ok(json!({ "domian": domian }))
   } else {

@@ -11,4 +11,5 @@ pub struct UploadForm {
   #[multipart(limit = "50MB")]
   pub dist: Vec<TempFile>,
   pub upload_token: Text<String>,
+  pub deployment_id: Text<u32>,
 }
