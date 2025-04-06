@@ -19,11 +19,10 @@ pub async fn create_site(
   body: Json<CreateSiteBody>,
 ) -> Result<HttpResponse, AppError> {
   let token = extract_token(&req)?;
-  let Json(CreateSiteBody { site_name }) = body;
   let user_id = jwt::verify::<String>(&token, &state.login_token_key)?
     .claims
     .data;
-  match service::create_site(&state, user_id, site_name).await {
+  match service::create_site(&state, user_id, body.0.site_name).await {
     Ok(data) => Response::success(Some(data)),
     Err(err) => Response::<()>::error(err),
   }

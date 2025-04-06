@@ -12,13 +12,12 @@ use crate::{
     audit_directory, get_project_config, load_keywords_from_embedded, set_project_config,
     tar_directory,
   },
-  rpc, Cli,
+  Cli,
 };
 use clap::Parser;
 use console::{style, Emoji};
 use indicatif::{ProgressBar, ProgressStyle};
 use log::trace;
-use rpc::MasterRpc;
 
 static LOOKING_GLASS: Emoji<'_, '_> = Emoji("🔍  ", "");
 
@@ -122,23 +121,27 @@ async fn deploy_project(path: String) -> String {
     let _site_id = get_site_id();
     "root.is.me".to_string()
   } else {
-    let rpc = MasterRpc::new();
-    let token = rpc.get_casual_token().await;
-    let deploy_data = rpc.create_site(token).await;
+    let master_rpc = rpc::Master::Rpc::new();
+    let agent_rpc = rpc::Agent::Rpc::new();
+    let token = master_rpc.get_casual_token().await;
+    let create_site_data = master_rpc.create_site(&token).await;
     let mut project_config = get_project_config();
-    project_config.site_id = Some(deploy_data.site_id.clone());
+    project_config.site_id = Some(create_site_data.site_id.clone());
     set_project_config(project_config);
-    let path = tar_directory(path.clone(), deploy_data.clone().site_id);
-    trace!("{:?}", deploy_data);
-    let domian = rpc
+    let path = tar_directory(path.clone(), &create_site_data.site_id);
+    trace!("{:?}", create_site_data);
+    let deploy_data = master_rpc
+      .create_deployment(&create_site_data.site_id, &token)
+      .await;
+    // rpc.deploy_project(deploy_data.site_id).await;
+    let domian = agent_rpc
       .upload(
         deploy_data.upload_url,
         deploy_data.upload_token,
-        deploy_data.deploy_id,
+        deploy_data.deployment_id,
         path,
       )
       .await;
-    // rpc.deploy_project(deploy_data.site_id).await;
     domian
   }
 }

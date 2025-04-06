@@ -13,3 +13,9 @@ pub struct UploadForm {
   pub upload_token: Text<String>,
   pub deployment_id: Text<u32>,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct SitePublishBody {
+  pub site_id: String,
+  pub deployment_id: u32,
+}

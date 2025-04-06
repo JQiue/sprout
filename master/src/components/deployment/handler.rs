@@ -40,14 +40,11 @@ pub async fn update_deployment_status(
   body: Json<UpdateDeploymentStatusBody>,
 ) -> Result<HttpResponse, AppError> {
   let Json(UpdateDeploymentStatusBody {
-    agent_id,
     agent_token,
     deployment_id,
     status,
   }) = body;
-  match service::update_deployment_status(&state, agent_id, agent_token, deployment_id, status)
-    .await
-  {
+  match service::update_deployment_status(&state, agent_token, deployment_id, status).await {
     Ok(data) => Response::success(Some(data)),
     Err(err) => Response::<()>::error(err),
   }

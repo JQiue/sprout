@@ -39,17 +39,38 @@ pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, Ap
     let target_path = base_dir.join(filename);
     fs::copy(tempfile.file.path(), target_path)?;
   }
+  // let master_rpc = rpc::Master::Rpc::new(
+  //   state.master_url.clone(),
+  //   state.agent_token.clone(),
+  //   state.agent_id,
+  // );
+  // master_rpc
+  //   .update_deployment_status(*form.deployment_id, DeploymentStatus::Uploading)
+  //   .await?;
+  Ok(json!({}))
+}
 
-  let master_rpc = rpc::Master::Rpc::new(
-    state.master_url.clone(),
-    state.agent_token.clone(),
-    state.agent_id,
-  );
+pub async fn publish_site(
+  state: &AppState,
+  site_id: String,
+  deployment_id: u32,
+) -> Result<Value, AppError> {
+  let base_dir = Path::new(&state.storage_path);
+
+  if !base_dir.exists() {
+    fs::create_dir_all(&base_dir)?;
+  }
+
+  let master_rpc = rpc::Master::Rpc::new();
   master_rpc
-    .update_deployment_status(*form.deployment_id, DeploymentStatus::Reviewing)
+    .update_deployment_status(
+      state.agent_token.clone(),
+      deployment_id,
+      DeploymentStatus::Reviewing,
+    )
     .await?;
-  // 申请域名
-  let domian = generate_domian(&site_id);
+  // 申请预览域名
+  let domian = generate_domian(&format!("preview_{site_id}"));
   let nginx_root_path = format!(
     "{}/{}",
     base_dir.canonicalize()?.to_string_lossy().to_string(),
@@ -64,7 +85,11 @@ pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, Ap
   let nginx_config = NginxConfig::new(domian.clone(), nginx_root_path, false, None);
   if nginx_config.deploy(Path::new("/etc/nginx/sprout")) {
     master_rpc
-      .update_deployment_status(*form.deployment_id, DeploymentStatus::Published)
+      .update_deployment_status(
+        state.agent_token.clone(),
+        deployment_id,
+        DeploymentStatus::Published,
+      )
       .await?;
     Ok(json!({ "domian": domian }))
   } else {

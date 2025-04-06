@@ -2,11 +2,13 @@ use entity::deployment::{self, DeploymentStatus};
 use helpers::{jwt, time::utc_now};
 use sea_orm::{IntoActiveModel, Set};
 use serde_json::{Value, json};
-use tracing::info;
 
 use crate::{app::AppState, error::AppError};
 
 pub async fn create_deployment(state: &AppState, site_id: String) -> Result<Value, AppError> {
+  if !state.repo.site().has_site(&site_id).await? {
+    return Err(AppError::SiteNotFound);
+  }
   if let Some(agent) = state.repo.agent().get_avaliable_agent().await? {
     let deployment = state
       .repo
@@ -37,7 +39,7 @@ pub async fn create_deployment(state: &AppState, site_id: String) -> Result<Valu
         "upload_token": init_response.upload_token,
         "site_id": site_id,
         "agent_id": deployment.agent_id,
-        "deploy_id": deployment.id,
+        "deployment_id": deployment.id,
     }))
   } else {
     Err(AppError::AgentNotFound)
@@ -59,30 +61,10 @@ pub async fn get_deployment_info(state: &AppState, deployment_id: u32) -> Result
 
 pub async fn update_deployment_status(
   state: &AppState,
-  agent_id: u32,
   agent_token: String,
   deployment_id: u32,
   status: DeploymentStatus,
 ) -> Result<Value, AppError> {
-  let agent = state
-    .repo
-    .agent()
-    .get_agent(agent_id)
-    .await?
-    .ok_or(AppError::AgentNotFound)?;
-
-  if agent.token != agent_token {
-    return Err(AppError::AgentAuthFailed);
-  }
-  if !state
-    .repo
-    .deployment()
-    .has_deployment(deployment_id)
-    .await?
-  {
-    return Err(AppError::DeploymentNotFound);
-  }
-  info!(">>> {:?}", status);
   jwt::verify::<String>(&agent_token, &state.register_agent_key)?;
   state
     .repo

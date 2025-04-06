@@ -18,6 +18,7 @@ pub enum AppError {
   DeploymentNotFound,
   RpcCallError,
   NotImplemented,
+  SiteNotFound,
 }
 
 impl AppError {
@@ -31,11 +32,12 @@ impl AppError {
       AppError::UserNotFound => 1005,
       AppError::UserExist => 1006,
       AppError::PasswordError => 1007,
-      AppError::NotImplemented => 3000,
       AppError::AgentExist => 2000,
       AppError::AgentNotFound => 2001,
       AppError::AgentAuthFailed => 2002,
       AppError::DeploymentNotFound => 2003,
+      AppError::SiteNotFound => 2004,
+      AppError::NotImplemented => 3000,
       AppError::RpcCallError => 3001,
     }
   }
@@ -55,6 +57,7 @@ impl AppError {
       AppError::DeploymentNotFound => "Deployment not found".to_string(),
       AppError::AgentAuthFailed => "Agent auth Failed".to_string(),
       AppError::RpcCallError => "Rpc call error".to_string(),
+      AppError::SiteNotFound => "Site not found".to_string(),
     }
   }
 }

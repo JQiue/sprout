@@ -20,13 +20,13 @@ impl<'a> SiteRepository<'a> {
   //   site.update(self.db).await
   // }
 
-  // pub async fn has_site(&self, site_id: String) -> Result<bool, DbErr> {
-  //   Ok(
-  //     site::Entity::find()
-  //       .filter(site::Column::SiteId.eq(site_id))
-  //       .one(self.db)
-  //       .await?
-  //       .is_some(),
-  //   )
-  // }
+  pub async fn has_site(&self, site_id: &str) -> Result<bool, DbErr> {
+    Ok(
+      site::Entity::find()
+        .filter(site::Column::SiteId.eq(site_id))
+        .one(self.db)
+        .await?
+        .is_some(),
+    )
+  }
 }

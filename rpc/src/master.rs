@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use tracing::trace;
 
 use crate::error::AppError;
 
@@ -23,25 +24,111 @@ pub enum DeploymentStatus {
   Failed,
 }
 
+#[derive(Deserialize)]
+pub struct GetCasualTokenData {
+  pub token: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct LoginData {
+  token: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct CreateSiteData {
+  pub site_id: String,
+  pub name: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct CreateDeploymentData {
+  pub site_id: String,
+  pub deployment_id: u32,
+  pub upload_url: String,
+  pub upload_token: String,
+  pub agent_id: u32,
+}
+
 pub struct Rpc {
-  agent_id: u32,
-  agent_token: String,
   master_url: String,
   api_client: reqwest::Client,
 }
 
 impl Rpc {
-  pub fn new(master_url: String, agent_token: String, agent_id: u32) -> Self {
+  pub fn new() -> Self {
     Self {
-      agent_id,
-      agent_token,
-      master_url,
+      master_url: "http://127.0.0.1:3000".to_string(),
       api_client: reqwest::Client::new(),
     }
   }
 
+  pub async fn login(&self, username: String, password: String) -> std::string::String {
+    let resp = self
+      .api_client
+      .post(format!("{}/api/user/token", self.master_url))
+      .json(&json!({
+        "email": username,
+        "password": password
+      }))
+      .send()
+      .await
+      .unwrap();
+    trace!(">>> resp {:?}", resp);
+    let data = resp.json::<Response<LoginData>>().await.unwrap();
+    trace!(">>> data {:?}", data);
+    if data.code != 0 {
+      panic!("login failed: {}", data.msg);
+    }
+    data.data.unwrap().token
+  }
+
+  pub async fn get_casual_token(&self) -> std::string::String {
+    let resp = self
+      .api_client
+      .get(format!("{}/api/user/casual", self.master_url))
+      .send()
+      .await
+      .unwrap();
+    trace!("{:?}", resp);
+    let data = resp.json::<Response<GetCasualTokenData>>().await.unwrap();
+    data.data.unwrap().token
+  }
+
+  pub async fn create_site(&self, token: &str) -> CreateSiteData {
+    let resp = self
+      .api_client
+      .post(format!("{}/api/site", self.master_url))
+      .bearer_auth(token)
+      .json(&json!({
+        "site_name": "casual_site"
+      }))
+      .send()
+      .await
+      .unwrap();
+    let data = resp.json::<Response<CreateSiteData>>().await.unwrap();
+    trace!("{:?}", data);
+    data.data.unwrap()
+  }
+
+  pub async fn create_deployment(&self, site_id: &str, token: &str) -> CreateDeploymentData {
+    let resp = self
+      .api_client
+      .post(format!("{}/api/deployment", self.master_url))
+      .bearer_auth(token)
+      .json(&json!({
+        "site_id": site_id
+      }))
+      .send()
+      .await
+      .unwrap();
+    let data = resp.json::<Response<CreateDeploymentData>>().await.unwrap();
+    trace!("{:?}", data);
+    data.data.unwrap()
+  }
+
   pub async fn update_deployment_status(
     &self,
+    agent_token: String,
     deployment_id: u32,
     status: DeploymentStatus,
   ) -> Result<(), AppError> {
@@ -49,8 +136,7 @@ impl Rpc {
       .api_client
       .post(format!("{}/api/deployment/status", self.master_url))
       .json(&json!({
-        "agent_id": self.agent_id,
-        "agent_token": self.agent_token.to_string(),
+        "agent_token": agent_token,
         "deployment_id": deployment_id,
         "status": status
       }))

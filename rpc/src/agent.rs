@@ -1,8 +1,9 @@
-use std::time::Duration;
+use std::{path::PathBuf, time::Duration};
 
+use reqwest::multipart::{Form, Part};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tracing::debug;
+use tracing::{debug, trace};
 
 use crate::error::AppError;
 
@@ -16,6 +17,11 @@ pub struct RpcResponse<T> {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InitUploadData {
   pub upload_token: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct UploadData {
+  domian: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -67,5 +73,42 @@ impl Rpc {
     let data = resp.json::<RpcResponse<InitUploadData>>().await?;
     debug!("Response body: {:?}", data);
     Ok(data.data)
+  }
+
+  pub async fn upload(
+    &self,
+    upload_url: String,
+    upload_token: String,
+    deployment_id: u32,
+    path: PathBuf,
+  ) -> std::string::String {
+    println!(">>> {:?}", path);
+    let path_buf = path.clone();
+    let file_name = path
+      .file_name()
+      .and_then(|n| n.to_str())
+      .map(|s| s.to_string())
+      .unwrap_or_else(|| "unknown".to_string());
+    let part = Part::file(path_buf)
+      .await
+      .unwrap()
+      .file_name(file_name)
+      .mime_str("application/octet-stream")
+      .unwrap();
+    let mut form = Form::new().part("dist", part);
+    form = form.part("upload_token", Part::text(upload_token));
+    form = form.part("deployment_id", Part::text(deployment_id.to_string()));
+    trace!(">>> upload file");
+    let resp = self
+      .api_client
+      .post(format!("http://{}:5001/api/upload/file", upload_url))
+      .multipart(form)
+      .send()
+      .await
+      .unwrap();
+    trace!(">>> {:?}", resp);
+    let data = resp.json::<RpcResponse<UploadData>>().await.unwrap();
+    trace!(">>> {:?}", data);
+    data.data.domian
   }
 }

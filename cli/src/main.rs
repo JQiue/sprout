@@ -1,7 +1,6 @@
 mod assets;
 mod commands;
 mod helper;
-mod rpc;
 
 use clap::{Parser, ValueEnum};
 use commands::{deploy::deploy, login::login};

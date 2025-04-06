@@ -929,6 +929,7 @@ dependencies = [
  "indicatif",
  "log",
  "reqwest",
+ "rpc",
  "rust-embed",
  "serde",
  "serde_json",

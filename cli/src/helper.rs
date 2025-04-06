@@ -168,7 +168,7 @@ pub fn load_keywords_from_embedded(file_paths: &[&str]) -> Vec<std::string::Stri
   keywords
 }
 
-pub fn tar_directory(source: String, filename: String) -> PathBuf {
+pub fn tar_directory(source: String, filename: &str) -> PathBuf {
   let temp = temp_dir().join(format!("{filename}.tar"));
   println!(">>> tar dist to {:?}", temp.clone());
   let mut builder = Builder::new(File::create(temp.clone()).unwrap());
@@ -245,6 +245,6 @@ mod test {
 
   #[test]
   pub fn test_tar_directory() {
-    tar_directory("./".to_owned(), "cli.tar".to_owned());
+    tar_directory("./".to_owned(), "cli.tar");
   }
 }
