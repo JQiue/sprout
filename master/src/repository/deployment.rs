@@ -11,15 +11,15 @@ pub struct DeploymentRepository<'a> {
 }
 
 impl<'a> DeploymentRepository<'a> {
-  pub async fn has_deployment(&self, id: u32) -> Result<bool, DbErr> {
-    Ok(
-      deployment::Entity::find()
-        .filter(deployment::Column::Id.eq(id))
-        .one(self.db)
-        .await?
-        .is_some(),
-    )
-  }
+  // pub async fn has_deployment(&self, id: u32) -> Result<bool, DbErr> {
+  //   Ok(
+  //     deployment::Entity::find()
+  //       .filter(deployment::Column::Id.eq(id))
+  //       .one(self.db)
+  //       .await?
+  //       .is_some(),
+  //   )
+  // }
 
   // pub async fn get_deployments(&self) -> Result<Vec<deployment::Model>, DbErr> {
   //   deployment::Entity::find().all(self.db).await

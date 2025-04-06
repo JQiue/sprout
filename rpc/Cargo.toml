@@ -9,5 +9,5 @@ publish = false
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 reqwest = { workspace = true, features = ["json", "multipart", "stream"] }
-log = "0.4.27"
-env_logger = "0.11.7"
+log = { workspace = true }
+env_logger = { workspace = true }

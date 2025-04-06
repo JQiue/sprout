@@ -107,13 +107,6 @@ impl From<actix_web::http::header::ToStrError> for AppError {
   }
 }
 
-impl From<reqwest::Error> for AppError {
-  fn from(err: reqwest::Error) -> Self {
-    tracing::error!("{:#?}", err);
-    AppError::RpcCallError
-  }
-}
-
 impl From<sea_orm::DbErr> for AppError {
   fn from(err: sea_orm::DbErr) -> Self {
     tracing::error!("{:#?}", err);

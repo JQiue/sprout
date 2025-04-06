@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+entity = { workspace = true }
+migration = { workspace = true }
+rpc = { workspace = true }
 helpers = { workspace = true, features = ["jwt", "hash", "uuid", "time"] }
 actix-cors = { workspace = true }
 actix-web = { workspace = true }
@@ -24,9 +27,5 @@ sea-orm = { workspace = true, features = [
   "macros",
   "debug-print",
 ] }
-reqwest = { workspace = true, features = ["json"] }
 cloudflare = { workspace = true }
-tokio = { version = "1.44.1", features = ["full"] }
-entity = { workspace = true }
-migration = { workspace = true }
-rpc = { workspace = true }
+tokio = { workspace = true, features = ["full"] }

@@ -4,7 +4,7 @@ mod helper;
 
 use clap::{Parser, ValueEnum};
 use commands::{deploy::deploy, login::login};
-use log::{Level, LevelFilter};
+use log::LevelFilter;
 
 #[derive(Parser)]
 #[command(name = "cli")]
