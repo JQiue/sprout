@@ -3209,10 +3209,11 @@ dependencies = [
 name = "rpc"
 version = "0.1.0"
 dependencies = [
+ "env_logger",
+ "log",
  "reqwest",
  "serde",
  "serde_json",
- "tracing",
 ]
 
 [[package]]

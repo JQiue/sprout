@@ -141,15 +141,10 @@ async fn deploy_project(path: String) -> String {
         path,
       )
       .await;
-    let deploy_site_data = master_rpc
-      .assign_task(
-        &token,
-        "publish",
-        &create_site_data.site_id,
-        deploy_data.deployment_id,
-      )
+    let assign_task_data = master_rpc
+      .publish_site(&token, &create_site_data.site_id, deploy_data.deployment_id)
       .await;
-    deploy_site_data
+    assign_task_data.domian
   }
 }
 

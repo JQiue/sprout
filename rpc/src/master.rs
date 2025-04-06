@@ -1,8 +1,8 @@
 use std::time::Duration;
 
+use log::trace;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tracing::trace;
 
 use crate::error::AppError;
 
@@ -134,7 +134,7 @@ impl Rpc {
       .await
       .unwrap();
     let data = resp.json::<Response<CreateDeploymentData>>().await.unwrap();
-    println!("{:?}", data);
+    trace!("{:?}", data);
     data.data.unwrap()
   }
 
@@ -159,19 +159,18 @@ impl Rpc {
     Ok(())
   }
 
-  pub async fn assign_task(
+  pub async fn publish_site(
     &self,
     token: &str,
-    r#type: &str,
     site_id: &str,
     deployment_id: u32,
-  ) -> std::option::Option<AssignTaskData> {
+  ) -> AssignTaskData {
     let resp = self
       .api_client
       .post(format!("{}/api/agent/task", self.master_url))
       .bearer_auth(token)
       .json(&json!({
-        "type": r#type,
+        "type": "publish",
         "site_id": site_id,
         "deployment_id": deployment_id,
       }))
@@ -179,10 +178,7 @@ impl Rpc {
       .await
       .unwrap();
 
-    if r#type == "publish" {
-      let data = resp.json::<Response<AssignTaskData>>().await.unwrap();
-      return data.data;
-    }
-    None
+    let data = resp.json::<Response<AssignTaskData>>().await.unwrap();
+    data.data.unwrap()
   }
 }

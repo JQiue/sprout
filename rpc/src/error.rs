@@ -1,3 +1,5 @@
+use log::error;
+
 #[derive(Debug)]
 pub enum AppError {
   Error,
@@ -6,14 +8,14 @@ pub enum AppError {
 
 impl From<std::io::Error> for AppError {
   fn from(err: std::io::Error) -> Self {
-    tracing::error!("{:#?}", err);
+    error!("{:#?}", err);
     AppError::Error
   }
 }
 
 impl From<reqwest::Error> for AppError {
   fn from(err: reqwest::Error) -> Self {
-    tracing::error!("{:#?}", err);
+    error!("{:#?}", err);
     AppError::RpcCallError
   }
 }

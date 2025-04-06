@@ -1,5 +1,6 @@
 use std::{path::PathBuf, time::Duration};
 
+use log::trace;
 use reqwest::multipart::{Form, Part};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -70,7 +71,7 @@ impl Rpc {
       .send()
       .await?;
     let data = resp.json::<RpcResponse<InitUploadData>>().await?;
-    println!("Response body: {:?}", data);
+    trace!("Response body: {:?}", data);
     Ok(data.data)
   }
 
@@ -81,7 +82,7 @@ impl Rpc {
     deployment_id: u32,
     path: PathBuf,
   ) {
-    println!(">>> {:?}", path);
+    trace!(">>> {:?}", path);
     let path_buf = path.clone();
     let file_name = path
       .file_name()
@@ -97,7 +98,7 @@ impl Rpc {
     let mut form = Form::new().part("dist", part);
     form = form.part("upload_token", Part::text(upload_token));
     form = form.part("deployment_id", Part::text(deployment_id.to_string()));
-    println!(">>> upload file");
+    trace!(">>> upload file");
     let resp = self
       .api_client
       .post(format!("http://{}:5001/api/upload/file", upload_url))
@@ -106,10 +107,10 @@ impl Rpc {
       .await
       .unwrap();
     let bytes = resp.bytes().await.unwrap(); // 获取响应的字节流
-    println!(">>> {:?}", String::from_utf8_lossy(&bytes)); // 将字节流转换为字符串并打印
+    trace!(">>> {:?}", String::from_utf8_lossy(&bytes)); // 将字节流转换为字符串并打印
     let data: RpcResponse<()> = serde_json::from_slice(&bytes).unwrap();
     // let data = resp.json::<RpcResponse<()>>().await.unwrap();
-    println!(">>> {:?}", data);
+    trace!(">>> {:?}", data);
   }
 
   pub async fn task_publish(
@@ -129,9 +130,9 @@ impl Rpc {
       .await
       .unwrap();
     let bytes = resp.bytes().await.unwrap(); // 获取响应的字节流
-    println!(">>> {:?}", String::from_utf8_lossy(&bytes)); // 将字节流转换为字符串并打印
+    trace!(">>> {:?}", String::from_utf8_lossy(&bytes)); // 将字节流转换为字符串并打印
     let data: RpcResponse<TaskPublishData> = serde_json::from_slice(&bytes).unwrap();
-    println!(">>> {:?}", data);
+    trace!(">>> {:?}", data);
     data.data
   }
 
@@ -152,9 +153,9 @@ impl Rpc {
       .await
       .unwrap();
     let bytes = resp.bytes().await.unwrap(); // 获取响应的字节流
-    println!(">>> {:?}", String::from_utf8_lossy(&bytes)); // 将字节流转换为字符串并打印
+    trace!(">>> {:?}", String::from_utf8_lossy(&bytes)); // 将字节流转换为字符串并打印
     let data: RpcResponse<TaskPublishData> = serde_json::from_slice(&bytes).unwrap();
-    println!(">>> {:?}", data);
+    trace!(">>> {:?}", data);
     data.data
   }
 }
