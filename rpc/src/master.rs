@@ -57,7 +57,7 @@ pub struct DeploySiteData {
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct AssignTaskData {
-  pub domian: String,
+  pub preview_url: String,
 }
 
 #[derive(Debug, Clone)]

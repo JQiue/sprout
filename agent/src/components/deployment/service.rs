@@ -87,7 +87,8 @@ pub async fn publish_site(
         DeploymentStatus::Published,
       )
       .await?;
-    Ok(json!({ "domian": domian }))
+    let preview_url = format!("http://{}", domian);
+    Ok(json!({ "preview_url": preview_url   }))
   } else {
     Err(AppError::Error)
   }

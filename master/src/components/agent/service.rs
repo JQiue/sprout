@@ -113,18 +113,18 @@ pub async fn assign_task(
     .ok_or(AppError::AgentNotFound)?;
 
   if r#type == "publish" {
-    let domian = rpc::Agent::Rpc::new()
+    let preview_url = rpc::Agent::Rpc::new()
       .task_publish(&site_id, deployment_id, &agent.ip_address)
       .await
-      .domian;
+      .preview_url;
     return Ok(json!({
-      "domian": domian
+      "preview_url": preview_url
     }));
   } else if r#type == "revoke" {
-    let domian = rpc::Agent::Rpc::new()
+    rpc::Agent::Rpc::new()
       .task_revoke(&site_id, deployment_id, &agent.ip_address)
       .await
-      .domian;
+      .preview_url;
   }
 
   Ok(Value::Null)

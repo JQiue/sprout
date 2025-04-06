@@ -32,9 +32,7 @@ async fn main() {
   env_logger::builder()
     .filter_level(LevelFilter::Trace)
     .init();
-
-  let cli = Cli::parse();
-  match cli.command {
+  match Cli::parse().command {
     Commands::Login => login().await,
     Commands::Deploy => deploy().await,
   };

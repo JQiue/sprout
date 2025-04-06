@@ -30,7 +30,7 @@ pub struct AgentHeartbeat {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TaskPublishData {
-  pub domian: String,
+  pub preview_url: String,
 }
 
 pub struct Rpc {

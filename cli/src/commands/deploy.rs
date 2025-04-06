@@ -9,8 +9,8 @@ use std::{
 
 use crate::{
   helper::{
-    audit_directory, get_project_config, load_keywords_from_embedded, set_project_config,
-    tar_directory,
+    audit_directory, get_cli_config, get_project_config, load_keywords_from_embedded,
+    set_project_config, tar_directory,
   },
   Cli, MASTER_URL,
 };
@@ -21,10 +21,9 @@ use log::trace;
 
 static LOOKING_GLASS: Emoji<'_, '_> = Emoji("🔍  ", "");
 
-fn get_site_id() {}
-
 fn is_login() -> bool {
-  false
+  let cli_config = get_cli_config();
+  cli_config.token.is_some()
 }
 
 fn audit_project(path: String) {
@@ -117,12 +116,35 @@ pub fn build_project(project_type: ProjectType) -> String {
 }
 
 async fn deploy_project(path: String) -> String {
+  let master_rpc = rpc::Master::Rpc::new(MASTER_URL.to_string());
+  let agent_rpc = rpc::Agent::Rpc::new();
   if is_login() {
-    let _site_id = get_site_id();
-    "root.is.me".to_string()
+    if let Some(site_id) = get_project_config().site_id {
+      let path = tar_directory(path.clone(), &site_id);
+      let cli_config = get_cli_config();
+      let deploy_data = master_rpc
+        .create_deployment(&site_id, &cli_config.token.clone().unwrap())
+        .await;
+      agent_rpc
+        .upload_file(
+          deploy_data.upload_url,
+          deploy_data.upload_token,
+          deploy_data.deployment_id,
+          path,
+        )
+        .await;
+      let assign_task_data = master_rpc
+        .publish_site(
+          &cli_config.token.unwrap(),
+          &site_id,
+          deploy_data.deployment_id,
+        )
+        .await;
+      assign_task_data.preview_url
+    } else {
+      "root.is.me".to_string()
+    }
   } else {
-    let master_rpc = rpc::Master::Rpc::new(MASTER_URL.to_string());
-    let agent_rpc = rpc::Agent::Rpc::new();
     let token = master_rpc.get_casual_token().await;
     let create_site_data = master_rpc.create_site(&token).await;
     let mut project_config = get_project_config();
@@ -144,7 +166,7 @@ async fn deploy_project(path: String) -> String {
     let assign_task_data = master_rpc
       .publish_site(&token, &create_site_data.site_id, deploy_data.deployment_id)
       .await;
-    assign_task_data.domian
+    assign_task_data.preview_url
   }
 }
 

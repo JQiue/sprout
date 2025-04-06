@@ -25,6 +25,7 @@ impl Cloudflare {
       zone_identifier,
     }
   }
+
   pub async fn dns(&self) {
     let endpoint = dns::ListDnsRecords {
       zone_identifier: &self.zone_identifier,
