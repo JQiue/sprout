@@ -6,13 +6,9 @@ edition = "2024"
 publish = false
 
 [dependencies]
-reqwest = { workspace = true, default-features = false, features = [
-  "rustls-tls",
-  "json",
-  "multipart",
-  "stream",
-] }
+reqwest = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 log = { workspace = true }
 env_logger = { workspace = true }
+openssl = { version = "0.10.72", features = ["vendored"] }
