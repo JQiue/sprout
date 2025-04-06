@@ -19,11 +19,6 @@ pub struct InitUploadData {
   pub upload_token: String,
 }
 
-#[derive(Debug, Deserialize, Clone)]
-pub struct UploadData {
-  domian: String,
-}
-
 #[derive(Serialize, Deserialize)]
 pub struct AgentHeartbeat {
   pub cpu_cores: i8,
@@ -75,14 +70,14 @@ impl Rpc {
     Ok(data.data)
   }
 
-  pub async fn upload(
+  pub async fn upload_file(
     &self,
     upload_url: String,
     upload_token: String,
     deployment_id: u32,
     path: PathBuf,
-  ) -> std::string::String {
-    println!(">>> {:?}", path);
+  ) {
+    trace!(">>> {:?}", path);
     let path_buf = path.clone();
     let file_name = path
       .file_name()
@@ -107,8 +102,7 @@ impl Rpc {
       .await
       .unwrap();
     trace!(">>> {:?}", resp);
-    let data = resp.json::<RpcResponse<UploadData>>().await.unwrap();
+    let data = resp.json::<RpcResponse<()>>().await.unwrap();
     trace!(">>> {:?}", data);
-    data.data.domian
   }
 }

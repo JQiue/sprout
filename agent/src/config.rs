@@ -27,7 +27,6 @@ pub struct Config {
   pub agent_id: u32,
   pub agent_token: String,
   pub storage_path: String,
-  pub master_url: String,
   pub upload_token_key: String,
   pub upload_token_key_expire: i64,
 }

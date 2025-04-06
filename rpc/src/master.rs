@@ -49,6 +49,11 @@ pub struct CreateDeploymentData {
   pub agent_id: u32,
 }
 
+#[derive(Debug, Deserialize, Clone)]
+pub struct DeploySiteData {
+  pub domian: String,
+}
+
 pub struct Rpc {
   master_url: String,
   api_client: reqwest::Client,
@@ -145,5 +150,21 @@ impl Rpc {
       .await?;
     resp.json::<Response<()>>().await?;
     Ok(())
+  }
+
+  pub async fn deploy_site(&self, token: &str, site_id: &str) -> DeploySiteData {
+    let resp = self
+      .api_client
+      .post(format!("{}/api/deployment", self.master_url))
+      .bearer_auth(token)
+      .json(&json!({
+        "site_id": site_id
+      }))
+      .send()
+      .await
+      .unwrap();
+    let data = resp.json::<Response<DeploySiteData>>().await.unwrap();
+    trace!("{:?}", data);
+    data.data.unwrap()
   }
 }

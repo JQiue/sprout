@@ -25,7 +25,7 @@ pub async fn init_upload(state: &AppState, site_id: String) -> Result<Value, App
 }
 
 pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, AppError> {
-  let site_id = jwt::verify::<String>(&form.upload_token, &state.upload_token_key)?
+  jwt::verify::<String>(&form.upload_token, &state.upload_token_key)?
     .claims
     .data;
   let base_dir = Path::new(&state.storage_path);
@@ -39,14 +39,6 @@ pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, Ap
     let target_path = base_dir.join(filename);
     fs::copy(tempfile.file.path(), target_path)?;
   }
-  // let master_rpc = rpc::Master::Rpc::new(
-  //   state.master_url.clone(),
-  //   state.agent_token.clone(),
-  //   state.agent_id,
-  // );
-  // master_rpc
-  //   .update_deployment_status(*form.deployment_id, DeploymentStatus::Uploading)
-  //   .await?;
   Ok(json!({}))
 }
 
@@ -62,13 +54,6 @@ pub async fn publish_site(
   }
 
   let master_rpc = rpc::Master::Rpc::new();
-  master_rpc
-    .update_deployment_status(
-      state.agent_token.clone(),
-      deployment_id,
-      DeploymentStatus::Reviewing,
-    )
-    .await?;
   // 申请预览域名
   let domian = generate_domian(&format!("preview_{site_id}"));
   let nginx_root_path = format!(
@@ -83,6 +68,7 @@ pub async fn publish_site(
   );
   trace!("{:?}", nginx_root_path);
   let nginx_config = NginxConfig::new(domian.clone(), nginx_root_path, false, None);
+
   if nginx_config.deploy(Path::new("/etc/nginx/sprout")) {
     master_rpc
       .update_deployment_status(
@@ -107,7 +93,6 @@ mod tests {
       agent_id: 1,
       agent_token: "kjfklfa".to_string(),
       storage_path: "./".to_string(),
-      master_url: "127..0.1.0".to_string(),
       upload_token_key: "efkalwfewalkf".to_string(),
       upload_token_key_expire: 1000,
     };

@@ -133,16 +133,18 @@ async fn deploy_project(path: String) -> String {
     let deploy_data = master_rpc
       .create_deployment(&create_site_data.site_id, &token)
       .await;
-    // rpc.deploy_project(deploy_data.site_id).await;
-    let domian = agent_rpc
-      .upload(
+    agent_rpc
+      .upload_file(
         deploy_data.upload_url,
         deploy_data.upload_token,
         deploy_data.deployment_id,
         path,
       )
       .await;
-    domian
+    let deploy_site_data = master_rpc
+      .deploy_site(&token, &create_site_data.site_id)
+      .await;
+    deploy_site_data.domian
   }
 }
 

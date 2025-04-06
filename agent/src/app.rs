@@ -15,7 +15,6 @@ pub struct AppState {
   pub agent_id: u32,
   pub agent_token: String,
   pub storage_path: String,
-  pub master_url: String,
   pub upload_token_key: String,
   pub upload_token_key_expire: i64,
 }
@@ -39,7 +38,6 @@ pub async fn start() -> Result<(), AppError> {
     agent_id: app_config.agent_id,
     agent_token: app_config.agent_token,
     storage_path: app_config.storage_path,
-    master_url: app_config.master_url,
     upload_token_key: app_config.upload_token_key,
     upload_token_key_expire: app_config.upload_token_key_expire,
   };
