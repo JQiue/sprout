@@ -8,12 +8,17 @@ rpc = { workspace = true }
 aho-corasick = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
-reqwest = { workspace = true, features = ["json", "multipart", "stream"] }
+reqwest = { workspace = true, default-features = false, features = [
+  "rustls-tls",
+  "json",
+  "multipart",
+  "stream",
+] }
 helpers = { workspace = true, features = ["jwt", "rand"] }
 log = { workspace = true }
 env_logger = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
-clap = { version = "4.5.32", features = ["derive"] }
+clap = { version = "4.5.35", features = ["derive"] }
 indicatif = "0.17.11"
 console = { version = "0.15.11", default-features = false, features = [
   "ansi-parsing",

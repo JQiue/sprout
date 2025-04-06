@@ -4,8 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+rpc = { workspace = true }
+actix-web = { workspace = true, features = ["rustls"] }
 actix-cors = { workspace = true }
-actix-web = { workspace = true }
+actix-multipart = { workspace = true }
+helpers = { workspace = true, features = ["jwt"] }
 dotenvy = { workspace = true }
 envy = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
@@ -15,11 +18,8 @@ tracing-subscriber = { workspace = true, features = [
   "env-filter",
   "local-time",
 ] }
-reqwest = { workspace = true, features = ["json"] }
 sysinfo = { workspace = true }
-actix-multipart = { workspace = true }
-helpers = { workspace = true, features = ["jwt"] }
-rpc = { workspace = true }
+reqwest = { workspace = true, features = ["rustls-tls"] }
 
 [dev-dependencies]
 mockall = { workspace = true }

@@ -6,8 +6,13 @@ edition = "2024"
 publish = false
 
 [dependencies]
+reqwest = { workspace = true, features = [
+  "rustls-tls",
+  "json",
+  "multipart",
+  "stream",
+] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
-reqwest = { workspace = true, features = ["json", "multipart", "stream"] }
 log = { workspace = true }
 env_logger = { workspace = true }

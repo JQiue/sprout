@@ -9,9 +9,8 @@ migration = { workspace = true }
 rpc = { workspace = true }
 helpers = { workspace = true, features = ["jwt", "hash", "uuid", "time"] }
 actix-cors = { workspace = true }
-actix-web = { workspace = true }
+actix-web = { workspace = true, features = ["rustls"] }
 actix-web-httpauth = { workspace = true }
-aho-corasick = { workspace = true }
 dotenvy = { workspace = true }
 envy = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
