@@ -19,6 +19,7 @@ pub struct Response<T> {
 pub enum DeploymentStatus {
   Pending,
   Uploading,
+  Uploaded,
   Reviewing,
   Published,
   Failed,
@@ -127,7 +128,7 @@ impl Rpc {
       .await
       .unwrap();
     let data = resp.json::<Response<CreateDeploymentData>>().await.unwrap();
-    trace!("{:?}", data);
+    println!("{:?}", data);
     data.data.unwrap()
   }
 
@@ -164,7 +165,7 @@ impl Rpc {
       .await
       .unwrap();
     let data = resp.json::<Response<DeploySiteData>>().await.unwrap();
-    trace!("{:?}", data);
+    println!(">>> {:?}", data);
     data.data.unwrap()
   }
 }

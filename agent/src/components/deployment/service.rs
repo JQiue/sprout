@@ -39,6 +39,17 @@ pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, Ap
     let target_path = base_dir.join(filename);
     fs::copy(tempfile.file.path(), target_path)?;
   }
+
+  let master_rpc = rpc::Master::Rpc::new();
+
+  master_rpc
+    .update_deployment_status(
+      state.agent_token.clone(),
+      *form.deployment_id,
+      DeploymentStatus::Uploaded,
+    )
+    .await?;
+
   Ok(Value::Null)
 }
 
@@ -90,7 +101,6 @@ mod tests {
   #[actix_web::test]
   async fn test_init_upload() {
     let state = AppState {
-      agent_id: 1,
       agent_token: "kjfklfa".to_string(),
       storage_path: "./".to_string(),
       upload_token_key: "efkalwfewalkf".to_string(),

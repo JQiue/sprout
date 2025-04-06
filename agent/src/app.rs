@@ -12,7 +12,6 @@ use crate::{
 
 #[derive(Debug, Clone)]
 pub struct AppState {
-  pub agent_id: u32,
   pub agent_token: String,
   pub storage_path: String,
   pub upload_token_key: String,
@@ -35,7 +34,6 @@ pub fn config_app(cfg: &mut ServiceConfig) {
 pub async fn start() -> Result<(), AppError> {
   let app_config = Config::from_env()?;
   let state = AppState {
-    agent_id: app_config.agent_id,
     agent_token: app_config.agent_token,
     storage_path: app_config.storage_path,
     upload_token_key: app_config.upload_token_key,

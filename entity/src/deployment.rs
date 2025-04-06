@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 pub enum DeploymentStatus {
   Pending,
   Uploading,
+  Uploaded,
   Reviewing,
   Published,
   Failed,
