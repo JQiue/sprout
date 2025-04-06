@@ -1,4 +1,4 @@
 /target
 dist
 *.env
-.pupup/config.json
+/.pupup
