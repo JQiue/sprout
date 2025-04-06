@@ -39,7 +39,7 @@ pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, Ap
     let target_path = base_dir.join(filename);
     fs::copy(tempfile.file.path(), target_path)?;
   }
-  Ok(json!({}))
+  Ok(Value::Null)
 }
 
 pub async fn publish_site(

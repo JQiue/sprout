@@ -93,7 +93,7 @@ impl Rpc {
     let mut form = Form::new().part("dist", part);
     form = form.part("upload_token", Part::text(upload_token));
     form = form.part("deployment_id", Part::text(deployment_id.to_string()));
-    trace!(">>> upload file");
+    println!(">>> upload file");
     let resp = self
       .api_client
       .post(format!("http://{}:5001/api/upload/file", upload_url))
@@ -101,8 +101,10 @@ impl Rpc {
       .send()
       .await
       .unwrap();
-    trace!(">>> {:?}", resp);
-    let data = resp.json::<RpcResponse<()>>().await.unwrap();
-    trace!(">>> {:?}", data);
+    let bytes = resp.bytes().await.unwrap(); // 获取响应的字节流
+    println!(">>> {:?}", String::from_utf8_lossy(&bytes)); // 将字节流转换为字符串并打印
+    let data: RpcResponse<()> = serde_json::from_slice(&bytes).unwrap();
+    // let data = resp.json::<RpcResponse<()>>().await.unwrap();
+    println!(">>> {:?}", data);
   }
 }

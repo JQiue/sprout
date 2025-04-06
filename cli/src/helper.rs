@@ -7,6 +7,7 @@ use std::{
 };
 
 use aho_corasick::AhoCorasick;
+use log::trace;
 use serde::{Deserialize, Serialize};
 use tar::Builder;
 
@@ -170,7 +171,7 @@ pub fn load_keywords_from_embedded(file_paths: &[&str]) -> Vec<std::string::Stri
 
 pub fn tar_directory(source: String, filename: &str) -> PathBuf {
   let temp = temp_dir().join(format!("{filename}.tar"));
-  println!(">>> tar dist to {:?}", temp.clone());
+  trace!(">>> tar dist to {:?}", temp.clone());
   let mut builder = Builder::new(File::create(temp.clone()).unwrap());
   builder.append_dir_all(filename, source).unwrap();
   builder.finish().unwrap();
