@@ -50,5 +50,5 @@ jobs:
           tar: unix
           zip: windows
           include: README.md
-          archive: $bin-$tag-${{ matrix.target }}
+          archive: app-${{ matrix.target }}
           token: ${{ secrets.GITHUB_TOKEN }}
