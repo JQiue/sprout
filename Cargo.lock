@@ -300,7 +300,6 @@ dependencies = [
  "envy",
  "helpers",
  "mockall",
- "reqwest",
  "rpc",
  "serde",
  "serde_json",

@@ -59,13 +59,6 @@ impl From<actix_web::http::header::ToStrError> for AppError {
   }
 }
 
-impl From<reqwest::Error> for AppError {
-  fn from(err: reqwest::Error) -> Self {
-    tracing::error!("{:#?}", err);
-    AppError::MasterRpcCallError
-  }
-}
-
 impl From<dotenvy::Error> for AppError {
   fn from(err: dotenvy::Error) -> Self {
     tracing::error!("{:#?}", err);

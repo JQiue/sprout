@@ -19,9 +19,7 @@ tracing-subscriber = { workspace = true, features = [
   "local-time",
 ] }
 sysinfo = { workspace = true }
-reqwest = { workspace = true, default-features = false, features = [
-  "rustls-tls",
-] }
+
 
 [dev-dependencies]
 mockall = { workspace = true }
