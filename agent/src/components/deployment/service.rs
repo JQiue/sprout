@@ -100,10 +100,7 @@ mod tests {
   #[actix_web::test]
   async fn test_init_upload() {
     let state = AppState {
-<<<<<<< HEAD
       master_rpc: rpc::Master::Rpc::new("http://127.0.0.1:3000".to_string()),
-=======
->>>>>>> e5fca5ef004673403e070e7e0dfeabb7f12d0e58
       agent_token: "kjfklfa".to_string(),
       storage_path: "./".to_string(),
       upload_token_key: "efkalwfewalkf".to_string(),
