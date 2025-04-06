@@ -32,8 +32,8 @@ where
 
 #[derive(Debug)]
 pub struct FileInfo {
-  path: PathBuf,
-  info: Vec<(String, usize, usize)>,
+  pub path: PathBuf,
+  pub info: Vec<(String, usize, usize)>,
 }
 
 pub fn audit_file(

@@ -24,7 +24,6 @@ pub struct Config {
   pub host: String,
   #[serde(default = "default_port")]
   pub port: u16,
-  pub agent_id: u32,
   pub agent_token: String,
   pub storage_path: String,
   pub upload_token_key: String,

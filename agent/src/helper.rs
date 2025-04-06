@@ -85,15 +85,17 @@ impl NginxConfig {
       custom_locations: vec![],
     }
   }
-  pub fn with_ssl(mut self, ssl_config: SslConfig) -> Self {
-    self.ssl_enabled = true;
-    self.ssl_config = Some(ssl_config);
-    self
-  }
-  pub fn add_location(mut self, location: Location) -> Self {
-    self.custom_locations.push(location);
-    self
-  }
+
+  // pub fn with_ssl(mut self, ssl_config: SslConfig) -> Self {
+  //   self.ssl_enabled = true;
+  //   self.ssl_config = Some(ssl_config);
+  //   self
+  // }
+
+  // pub fn add_location(mut self, location: Location) -> Self {
+  //   self.custom_locations.push(location);
+  //   self
+  // }
 
   pub fn generate_config(&self) -> String {
     let mut config = String::new();
