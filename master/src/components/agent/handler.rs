@@ -66,3 +66,14 @@ pub async fn refresh_agent_token(
     Err(err) => Response::<()>::error(err),
   }
 }
+
+#[post("/agent/task")]
+pub async fn assign_task(
+  state: Data<AppState>,
+  body: Json<AssignTaskBody>,
+) -> Result<HttpResponse, AppError> {
+  match service::assign_task(&state, body.0.r#type, body.0.site_id, body.0.deployment_id).await {
+    Ok(data) => Response::success(Some(data)),
+    Err(err) => Response::<()>::error(err),
+  }
+}

@@ -11,5 +11,6 @@ impl AgentComponent {
     cfg.service(handler::register_agent);
     cfg.service(handler::get_agent_status);
     cfg.service(handler::refresh_agent_token);
+    cfg.service(handler::assign_task);
   }
 }

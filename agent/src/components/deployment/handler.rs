@@ -37,7 +37,7 @@ pub async fn file_upload(
   }
 }
 
-#[post("/site/publish")]
+#[post("/task/publish")]
 pub async fn publish_site(
   state: Data<AppState>,
   body: Json<SitePublishBody>,
@@ -47,3 +47,14 @@ pub async fn publish_site(
     Err(err) => Response::<()>::error(err),
   }
 }
+
+// #[post("/task/revoke")]
+// pub async fn publish_site(
+//   state: Data<AppState>,
+//   body: Json<SitePublishBody>,
+// ) -> Result<HttpResponse, AppError> {
+//   match service::revoke_site(&state, body.0.site_id, body.0.deployment_id).await {
+//     Ok(data) => Response::success(Some(data)),
+//     Err(err) => Response::<()>::error(err),
+//   }
+// }

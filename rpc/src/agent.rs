@@ -3,7 +3,6 @@ use std::{path::PathBuf, time::Duration};
 use reqwest::multipart::{Form, Part};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tracing::{debug, trace};
 
 use crate::error::AppError;
 
@@ -26,6 +25,11 @@ pub struct AgentHeartbeat {
   pub total_memory: i32,
   pub free_memory: i32,
   pub memory_usage: f32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TaskPublishData {
+  pub domian: String,
 }
 
 pub struct Rpc {
@@ -66,7 +70,7 @@ impl Rpc {
       .send()
       .await?;
     let data = resp.json::<RpcResponse<InitUploadData>>().await?;
-    debug!("Response body: {:?}", data);
+    println!("Response body: {:?}", data);
     Ok(data.data)
   }
 
@@ -77,7 +81,7 @@ impl Rpc {
     deployment_id: u32,
     path: PathBuf,
   ) {
-    trace!(">>> {:?}", path);
+    println!(">>> {:?}", path);
     let path_buf = path.clone();
     let file_name = path
       .file_name()
@@ -106,5 +110,51 @@ impl Rpc {
     let data: RpcResponse<()> = serde_json::from_slice(&bytes).unwrap();
     // let data = resp.json::<RpcResponse<()>>().await.unwrap();
     println!(">>> {:?}", data);
+  }
+
+  pub async fn task_publish(
+    &self,
+    site_id: &str,
+    deployment_id: u32,
+    ip_address: &str,
+  ) -> TaskPublishData {
+    let resp = self
+      .api_client
+      .post(format!("http://{}:5001/api/task/publish", ip_address))
+      .json(&json!({
+        "site_id": site_id,
+        "deployment_id": deployment_id
+      }))
+      .send()
+      .await
+      .unwrap();
+    let bytes = resp.bytes().await.unwrap(); // 获取响应的字节流
+    println!(">>> {:?}", String::from_utf8_lossy(&bytes)); // 将字节流转换为字符串并打印
+    let data: RpcResponse<TaskPublishData> = serde_json::from_slice(&bytes).unwrap();
+    println!(">>> {:?}", data);
+    data.data
+  }
+
+  pub async fn task_revoke(
+    &self,
+    site_id: &str,
+    deployment_id: u32,
+    ip_address: &str,
+  ) -> TaskPublishData {
+    let resp = self
+      .api_client
+      .post(format!("http://{}:5001/api/task/revoke", ip_address))
+      .json(&json!({
+        "site_id": site_id,
+        "deployment_id": deployment_id
+      }))
+      .send()
+      .await
+      .unwrap();
+    let bytes = resp.bytes().await.unwrap(); // 获取响应的字节流
+    println!(">>> {:?}", String::from_utf8_lossy(&bytes)); // 将字节流转换为字符串并打印
+    let data: RpcResponse<TaskPublishData> = serde_json::from_slice(&bytes).unwrap();
+    println!(">>> {:?}", data);
+    data.data
   }
 }

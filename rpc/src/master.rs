@@ -55,6 +55,11 @@ pub struct DeploySiteData {
   pub domian: String,
 }
 
+#[derive(Debug, Deserialize, Clone)]
+pub struct AssignTaskData {
+  pub domian: String,
+}
+
 #[derive(Debug, Clone)]
 pub struct Rpc {
   master_url: String,
@@ -154,19 +159,30 @@ impl Rpc {
     Ok(())
   }
 
-  pub async fn deploy_site(&self, token: &str, site_id: &str) -> DeploySiteData {
+  pub async fn assign_task(
+    &self,
+    token: &str,
+    r#type: &str,
+    site_id: &str,
+    deployment_id: u32,
+  ) -> std::option::Option<AssignTaskData> {
     let resp = self
       .api_client
-      .post(format!("{}/api/deployment", self.master_url))
+      .post(format!("{}/api/agent/task", self.master_url))
       .bearer_auth(token)
       .json(&json!({
-        "site_id": site_id
+        "type": r#type,
+        "site_id": site_id,
+        "deployment_id": deployment_id,
       }))
       .send()
       .await
       .unwrap();
-    let data = resp.json::<Response<DeploySiteData>>().await.unwrap();
-    println!(">>> {:?}", data);
-    data.data.unwrap()
+
+    if r#type == "publish" {
+      let data = resp.json::<Response<AssignTaskData>>().await.unwrap();
+      return data.data;
+    }
+    None
   }
 }

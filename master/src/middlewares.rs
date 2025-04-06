@@ -4,7 +4,7 @@ use entity::user::UserType;
 // use helpers::jwt;
 use serde::{Deserialize, Serialize};
 
-use crate::{app::AppState, error::AppError, response::Response};
+// use crate::{app::AppState, error::AppError, response::Response};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct JwtPayload {

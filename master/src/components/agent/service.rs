@@ -92,3 +92,40 @@ pub async fn refresh_agent_token(
     "token": agent.token
   }))
 }
+
+pub async fn assign_task(
+  state: &AppState,
+  r#type: String,
+  site_id: String,
+  deployment_id: u32,
+) -> Result<Value, AppError> {
+  let deployment = state
+    .repo
+    .deployment()
+    .get_deployment(deployment_id)
+    .await?
+    .ok_or(AppError::DeploymentNotFound)?;
+  let agent = state
+    .repo
+    .agent()
+    .get_agent(deployment.agent_id)
+    .await?
+    .ok_or(AppError::AgentNotFound)?;
+
+  if r#type == "publish" {
+    let domian = rpc::Agent::Rpc::new()
+      .task_publish(&site_id, deployment_id, &agent.ip_address)
+      .await
+      .domian;
+    return Ok(json!({
+      "domian": domian
+    }));
+  } else if r#type == "revoke" {
+    let domian = rpc::Agent::Rpc::new()
+      .task_revoke(&site_id, deployment_id, &agent.ip_address)
+      .await
+      .domian;
+  }
+
+  Ok(Value::Null)
+}
