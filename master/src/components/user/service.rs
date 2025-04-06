@@ -11,7 +11,6 @@ use serde_json::{Value, json};
 use crate::{app::AppState, error::AppError};
 
 pub async fn generate_casual_user(state: &AppState) -> Result<Value, AppError> {
-  let user_type = "casual";
   let nickname = format!("casual_{}", nanoid(&Alphabet::UPPER, 12));
   let email = format!("casual_@{}.com", nanoid(&Alphabet::UPPER, 12));
   let hashed = argon2(

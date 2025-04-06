@@ -1,6 +1,4 @@
-use sea_orm::prelude::StringLen;
-use sea_orm::{DeriveActiveEnum, EnumIter};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 #[derive(Deserialize, Clone)]
 pub struct UserRegisterBody {

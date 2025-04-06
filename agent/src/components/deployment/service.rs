@@ -40,9 +40,8 @@ pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, Ap
     fs::copy(tempfile.file.path(), target_path)?;
   }
 
-  let master_rpc = rpc::Master::Rpc::new();
-
-  master_rpc
+  state
+    .master_rpc
     .update_deployment_status(
       state.agent_token.clone(),
       *form.deployment_id,
@@ -64,7 +63,6 @@ pub async fn publish_site(
     fs::create_dir_all(&base_dir)?;
   }
 
-  let master_rpc = rpc::Master::Rpc::new();
   // 申请预览域名
   let domian = generate_domian(&format!("preview_{site_id}"));
   let nginx_root_path = format!(
@@ -81,7 +79,8 @@ pub async fn publish_site(
   let nginx_config = NginxConfig::new(domian.clone(), nginx_root_path, false, None);
 
   if nginx_config.deploy(Path::new("/etc/nginx/sprout")) {
-    master_rpc
+    state
+      .master_rpc
       .update_deployment_status(
         state.agent_token.clone(),
         deployment_id,
@@ -101,6 +100,7 @@ mod tests {
   #[actix_web::test]
   async fn test_init_upload() {
     let state = AppState {
+      master_rpc: rpc::Master::Rpc::new("http://127.0.0.1:3000".to_string()),
       agent_token: "kjfklfa".to_string(),
       storage_path: "./".to_string(),
       upload_token_key: "efkalwfewalkf".to_string(),

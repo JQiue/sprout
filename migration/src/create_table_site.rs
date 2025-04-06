@@ -4,16 +4,15 @@ use sea_orm_migration::{prelude::*, schema::*};
 #[derive(DeriveIden)]
 enum Site {
   Table,
-  Id,           // 主键 ID
-  SiteId,       // 站点 ID
-  UserId,       // 用户 ID
-  ServerId,     // 关联的服务器 ID
-  DeploymentId, // 部署 ID
-  Name,         // 站点名称
-  Domain,       // 主域名
-  Status,       // 状态：active，disabled
-  CreatedAt,    // 创建时间
-  UpdatedAt,    // 更新时间
+  Id,        // 主键 ID
+  SiteId,    // 站点 ID
+  UserId,    // 用户 ID
+  ServerId,  // 关联的服务器 ID
+  Name,      // 站点名称
+  Domain,    // 主域名
+  Status,    // 状态：active，disabled
+  CreatedAt, // 创建时间
+  UpdatedAt, // 更新时间
 }
 
 #[derive(Iden, EnumIter)]

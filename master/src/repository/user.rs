@@ -13,9 +13,9 @@ pub struct UserRepository<'a> {
 }
 
 impl<'a> UserRepository<'a> {
-  pub async fn get_users(&self) -> Result<Vec<user::Model>, DbErr> {
-    user::Entity::find().all(self.db).await
-  }
+  // pub async fn get_users(&self) -> Result<Vec<user::Model>, DbErr> {
+  //   user::Entity::find().all(self.db).await
+  // }
 
   pub async fn get_user_by_email(&self, email: &str) -> Result<Option<user::Model>, DbErr> {
     self.get_user(UserQueryBy::Email(email)).await
@@ -49,17 +49,13 @@ impl<'a> UserRepository<'a> {
     user.insert(self.db).await
   }
 
-  pub async fn update_user(&self, user: user::ActiveModel) -> Result<user::Model, DbErr> {
-    user.update(self.db).await
-  }
+  // pub async fn update_user(&self, user: user::ActiveModel) -> Result<user::Model, DbErr> {
+  //   user.update(self.db).await
+  // }
 
-  pub async fn set_2fa(&self, user: user::ActiveModel) -> Result<user::Model, DbErr> {
-    user.update(self.db).await
-  }
-
-  pub async fn has_user_by_id(&self, id: String) -> Result<bool, DbErr> {
-    self.has_user(UserQueryBy::UserId(id)).await
-  }
+  // pub async fn has_user_by_id(&self, id: String) -> Result<bool, DbErr> {
+  //   self.has_user(UserQueryBy::UserId(id)).await
+  // }
 
   pub async fn has_user_by_email(&self, email: &str) -> Result<bool, DbErr> {
     self.has_user(UserQueryBy::Email(email)).await

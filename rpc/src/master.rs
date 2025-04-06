@@ -55,15 +55,16 @@ pub struct DeploySiteData {
   pub domian: String,
 }
 
+#[derive(Debug, Clone)]
 pub struct Rpc {
   master_url: String,
   api_client: reqwest::Client,
 }
 
 impl Rpc {
-  pub fn new() -> Self {
+  pub fn new(master_url: String) -> Self {
     Self {
-      master_url: "http://127.0.0.1:3000".to_string(),
+      master_url,
       api_client: reqwest::Client::new(),
     }
   }

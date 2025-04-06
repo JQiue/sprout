@@ -4,7 +4,7 @@ use actix_web::{HttpResponse, ResponseError, http::StatusCode};
 pub enum AppError {
   Error,
   Env,
-  RpcCallError,
+  MasterRpcCallError,
 }
 
 impl AppError {
@@ -12,14 +12,14 @@ impl AppError {
     match self {
       AppError::Error => 1000,
       AppError::Env => 1001,
-      AppError::RpcCallError => 1002,
+      AppError::MasterRpcCallError => 1002,
     }
   }
   pub fn message(&self) -> String {
     match self {
       AppError::Error => "Error".to_string(),
       AppError::Env => "Env error".to_string(),
-      AppError::RpcCallError => "Rpc call error".to_string(),
+      AppError::MasterRpcCallError => "Master rpc call error".to_string(),
     }
   }
 }
@@ -27,7 +27,7 @@ impl AppError {
 impl From<rpc::error::AppError> for AppError {
   fn from(err: rpc::error::AppError) -> Self {
     tracing::error!("{:#?}", err);
-    AppError::RpcCallError
+    AppError::MasterRpcCallError
   }
 }
 
@@ -62,7 +62,7 @@ impl From<actix_web::http::header::ToStrError> for AppError {
 impl From<reqwest::Error> for AppError {
   fn from(err: reqwest::Error) -> Self {
     tracing::error!("{:#?}", err);
-    AppError::RpcCallError
+    AppError::MasterRpcCallError
   }
 }
 

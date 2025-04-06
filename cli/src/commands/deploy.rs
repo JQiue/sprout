@@ -12,7 +12,7 @@ use crate::{
     audit_directory, get_project_config, load_keywords_from_embedded, set_project_config,
     tar_directory,
   },
-  Cli,
+  Cli, MASTER_URL,
 };
 use clap::Parser;
 use console::{style, Emoji};
@@ -121,7 +121,7 @@ async fn deploy_project(path: String) -> String {
     let _site_id = get_site_id();
     "root.is.me".to_string()
   } else {
-    let master_rpc = rpc::Master::Rpc::new();
+    let master_rpc = rpc::Master::Rpc::new(MASTER_URL.to_string());
     let agent_rpc = rpc::Agent::Rpc::new();
     let token = master_rpc.get_casual_token().await;
     let create_site_data = master_rpc.create_site(&token).await;

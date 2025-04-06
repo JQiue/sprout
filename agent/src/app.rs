@@ -13,6 +13,7 @@ use crate::{
 #[derive(Debug, Clone)]
 pub struct AppState {
   pub agent_token: String,
+  pub master_rpc: rpc::Master::Rpc,
   pub storage_path: String,
   pub upload_token_key: String,
   pub upload_token_key_expire: i64,
@@ -34,6 +35,7 @@ pub fn config_app(cfg: &mut ServiceConfig) {
 pub async fn start() -> Result<(), AppError> {
   let app_config = Config::from_env()?;
   let state = AppState {
+    master_rpc: rpc::Master::Rpc::new(app_config.master_url),
     agent_token: app_config.agent_token,
     storage_path: app_config.storage_path,
     upload_token_key: app_config.upload_token_key,
