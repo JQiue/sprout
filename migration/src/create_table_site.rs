@@ -9,7 +9,7 @@ enum Site {
   UserId,    // 用户 ID
   ServerId,  // 关联的服务器 ID
   Name,      // 站点名称
-  Domain,    // 主域名
+  Domain,    // 绑定域名
   Status,    // 状态：active，disabled
   CreatedAt, // 创建时间
   UpdatedAt, // 更新时间
