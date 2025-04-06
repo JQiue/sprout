@@ -118,12 +118,30 @@ pub fn build_project(project_type: ProjectType) -> String {
 async fn deploy_project(path: String) -> String {
   let master_rpc = rpc::Master::Rpc::new(MASTER_URL.to_string());
   let agent_rpc = rpc::Agent::Rpc::new();
-  if is_login() {
+  if let Some(token) = get_cli_config().token {
     if let Some(site_id) = get_project_config().site_id {
       let path = tar_directory(path.clone(), &site_id);
-      let cli_config = get_cli_config();
+      let deploy_data = master_rpc.create_deployment(&site_id, &token).await;
+      agent_rpc
+        .upload_file(
+          deploy_data.upload_url,
+          deploy_data.upload_token,
+          deploy_data.deployment_id,
+          path,
+        )
+        .await;
+      let assign_task_data = master_rpc
+        .publish_site(&token, &site_id, deploy_data.deployment_id)
+        .await;
+      assign_task_data.preview_url
+    } else {
+      let create_site_data = master_rpc.create_site(&token).await;
+      let mut project_config = get_project_config();
+      project_config.site_id = Some(create_site_data.site_id.clone());
+      set_project_config(project_config);
+      let path = tar_directory(path.clone(), &create_site_data.site_id);
       let deploy_data = master_rpc
-        .create_deployment(&site_id, &cli_config.token.clone().unwrap())
+        .create_deployment(&create_site_data.site_id, &token)
         .await;
       agent_rpc
         .upload_file(
@@ -134,15 +152,9 @@ async fn deploy_project(path: String) -> String {
         )
         .await;
       let assign_task_data = master_rpc
-        .publish_site(
-          &cli_config.token.unwrap(),
-          &site_id,
-          deploy_data.deployment_id,
-        )
+        .publish_site(&token, &create_site_data.site_id, deploy_data.deployment_id)
         .await;
       assign_task_data.preview_url
-    } else {
-      "root.is.me".to_string()
     }
   } else {
     let token = master_rpc.get_casual_token().await;
@@ -207,12 +219,12 @@ pub async fn deploy() {
   println!("Deploy success!");
   if is_login() {
     pb.finish_with_message(format!(
-      "Bind domian: {}, Please use cname to bind the domian",
+      "Preview url: {}, Please use click to preview the site",
       style(domian).cyan(),
     ));
   } else {
     pb.finish_with_message(format!(
-      "Preview site: {}, Please use click to preview the site",
+      "Preview url: {}, Please use click to preview the site",
       style(domian).cyan(),
     ));
   }

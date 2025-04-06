@@ -4,7 +4,7 @@ mod helper;
 
 use clap::{Parser, ValueEnum};
 use commands::{deploy::deploy, login::login};
-use log::LevelFilter;
+use log::{Level, LevelFilter};
 
 #[derive(Parser)]
 #[command(name = "cli")]
@@ -30,7 +30,8 @@ static MASTER_URL: &str = "http://127.0.0.1:3000";
 #[tokio::main]
 async fn main() {
   env_logger::builder()
-    .filter_level(LevelFilter::Trace)
+    .filter_level(LevelFilter::Off)
+    .parse_default_env()
     .init();
   match Cli::parse().command {
     Commands::Login => login().await,
