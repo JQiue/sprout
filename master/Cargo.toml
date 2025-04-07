@@ -26,5 +26,7 @@ sea-orm = { workspace = true, features = [
   "macros",
   "debug-print",
 ] }
-cloudflare = { workspace = true }
+cloudflare = { workspace = true, default-features = false, features = [
+  "rustls-tls",
+] }
 tokio = { workspace = true, features = ["full"] }

@@ -8,12 +8,6 @@ rpc = { workspace = true }
 aho-corasick = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
-reqwest = { workspace = true, default-features = false, features = [
-  "rustls-tls",
-  "json",
-  "multipart",
-  "stream",
-] }
 helpers = { workspace = true, features = ["jwt", "rand"] }
 log = { workspace = true }
 env_logger = { workspace = true }
