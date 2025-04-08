@@ -136,25 +136,19 @@ impl Rpc {
     data.data
   }
 
-  pub async fn task_revoke(
-    &self,
-    site_id: &str,
-    deployment_id: u32,
-    ip_address: &str,
-  ) -> TaskPublishData {
+  pub async fn task_revoke(&self, site_id: &str, ip_address: &str) {
     let resp = self
       .api_client
       .post(format!("http://{}:5001/api/task/revoke", ip_address))
       .json(&json!({
         "site_id": site_id,
-        "deployment_id": deployment_id
       }))
       .send()
       .await
       .unwrap();
     let bytes = resp.bytes().await.unwrap(); // 获取响应的字节流
     trace!(">>> {:?}", String::from_utf8_lossy(&bytes)); // 将字节流转换为字符串并打印
-    let data: RpcResponse<TaskPublishData> = serde_json::from_slice(&bytes).unwrap();
+    let data: RpcResponse<()> = serde_json::from_slice(&bytes).unwrap();
     trace!(">>> {:?}", data);
     data.data
   }

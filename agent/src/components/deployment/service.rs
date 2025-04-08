@@ -110,7 +110,7 @@ pub async fn revoke_site(state: &AppState, site_id: String) -> Result<Value, App
   fs::remove_dir_all(base_dir.join(&site_id))?;
   let nc = NginxConfig::new(&state.nginx_config_path, false);
   nc.remove_config(&site_id);
-  Ok(json!({}))
+  Ok(Value::Null)
 }
 
 #[cfg(test)]
