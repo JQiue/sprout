@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::{
   fs,
   io::{BufRead, BufReader},
-  path::Path,
+  path::PathBuf,
   process::{Command, Stdio},
 };
 use tracing::{error, trace};
@@ -47,117 +47,55 @@ pub fn extract_tar(filename: String, output: String) {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct NginxConfig {
-  domain: String,
-  root_path: String,
+  config_path: PathBuf,
   ssl_enabled: bool,
-  ssl_config: Option<SslConfig>,
-  custom_locations: Vec<Location>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct SslConfig {
-  certificate_path: String,
-  certificate_key_path: String,
-  protocols: Vec<String>,
-  ciphers: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Location {
-  path: String,
-  try_files: Option<String>,
-  root: Option<String>,
-  proxy_pass: Option<String>,
 }
 
 impl NginxConfig {
-  pub fn new(
-    domain: String,
-    root_path: String,
-    ssl_enabled: bool,
-    ssl_config: Option<SslConfig>,
-  ) -> Self {
+  pub fn new(config_path: &str, ssl_enabled: bool) -> Self {
     Self {
-      domain,
-      root_path,
+      config_path: config_path.into(),
       ssl_enabled,
-      ssl_config,
-      custom_locations: vec![],
     }
   }
 
-  // pub fn with_ssl(mut self, ssl_config: SslConfig) -> Self {
-  //   self.ssl_enabled = true;
-  //   self.ssl_config = Some(ssl_config);
-  //   self
-  // }
-
-  // pub fn add_location(mut self, location: Location) -> Self {
-  //   self.custom_locations.push(location);
-  //   self
-  // }
-
-  pub fn generate_config(&self) -> String {
+  pub fn generate_config(&self, domain: &str, root_path: &str) -> String {
     let mut config = String::new();
-    // HTTP server block
     config.push_str("server {\n");
     config.push_str("    listen 80;\n");
-    if self.ssl_enabled {
-      config.push_str("    listen 443 ssl;\n");
-      // SSL redirect
-      config.push_str(&format!(
-        "    if ($server_port !~ 443) {{\n        rewrite ^(.*)$ https://{} permanent;\n    }}\n",
-        self.domain
-      ));
-      // SSL configuration
-      if let Some(ssl) = &self.ssl_config {
-        config.push_str(&format!("    ssl_certificate {};\n", ssl.certificate_path));
-        config.push_str(&format!(
-          "    ssl_certificate_key {};\n",
-          ssl.certificate_key_path
-        ));
-        config.push_str("    ssl_session_timeout 5m;\n");
-        config.push_str(&format!("    ssl_protocols {};\n", ssl.protocols.join(" ")));
-        config.push_str(&format!("    ssl_ciphers {};\n", ssl.ciphers));
-        config.push_str("    ssl_prefer_server_ciphers on;\n");
-      }
-    }
-    config.push_str(&format!("    server_name {};\n", self.domain));
-    // Default location
+    config.push_str(&format!("    server_name {};\n", domain));
     config.push_str("    location / {\n");
     config.push_str("        try_files $uri $uri/ /index.html;\n");
-    config.push_str(&format!("        root {};\n", self.root_path));
+    config.push_str(&format!("        root {};\n", root_path));
     config.push_str("        index index.html;\n");
     config.push_str("    }\n");
-    // Custom locations
-    for location in &self.custom_locations {
-      config.push_str(&format!("    location {} {{\n", location.path));
-      if let Some(try_files) = &location.try_files {
-        config.push_str(&format!("        try_files {};\n", try_files));
-      }
-      if let Some(root) = &location.root {
-        config.push_str(&format!("        root {};\n", root));
-      }
-      if let Some(proxy_pass) = &location.proxy_pass {
-        config.push_str(&format!("        proxy_pass {};\n", proxy_pass));
-      }
-      config.push_str("    }\n");
-    }
     config.push_str("}\n");
     config
   }
-  pub fn deploy(&self, config_path: &Path) -> bool {
-    // 创建配置文件
-    let config_content = self.generate_config();
 
-    // 暂时简单写入，以后替换为原子接入
-    if let Err(e) = fs::create_dir_all(config_path) {
+  pub fn remove_config(&self, site_id: &str) {
+    let domian_config = self.config_path.join(site_id.to_string() + ".conf");
+    if domian_config.exists() {
+      fs::remove_file(domian_config).unwrap_or_else(|_| {
+        error!("Failed to remove config file: {}.conf", site_id);
+      });
+    } else {
+      error!("Config file does not exist: {}.conf", site_id);
+    }
+  }
+
+  pub fn deploy(&self, domain: &str, root_path: &str) -> bool {
+    // 生成配置文件内容
+    let config_content = self.generate_config(domain, root_path);
+
+    // 暂时简单写入，以后替换为原子写入
+    if let Err(e) = fs::create_dir_all(self.config_path.as_path()) {
       tracing::error!("Failed to create config directory: {}", e);
       return false;
     }
 
     if !fs::write(
-      config_path.join(format!("{}.conf", self.domain)),
+      self.config_path.join(format!("{}.conf", domain)),
       config_content,
     )
     .map_err(|_| {
@@ -168,7 +106,11 @@ impl NginxConfig {
       return false;
     }
 
-    // 测试配置是否有效
+    if self.ssl_enabled {
+      self.apply_ssl();
+    }
+
+    // 测试配置是否正确
     if !Command::new("nginx").arg("-t").status().is_ok() {
       tracing::error!("{}", "Nginx configuration test failed");
       return false;
@@ -185,11 +127,24 @@ impl NginxConfig {
     }
     true
   }
+
+  pub fn apply_ssl(&self) {}
 }
 
 #[cfg(test)]
 mod test {
+  use super::NginxConfig;
 
   #[test]
-  pub fn test() {}
+  pub fn test_deploy() {
+    let nc = NginxConfig::new("/etc/nginx/sprout", false);
+    println!("{}", nc.generate_config("jinqiu.wang", "/var/www/html"));
+    nc.deploy("jinqiu.wang", "/var/www/html");
+  }
+
+  #[test]
+  pub fn test_revoke() {
+    let nc = NginxConfig::new("/etc/nginx/sprout", false);
+    nc.remove_config("jinqiu.wang");
+  }
 }

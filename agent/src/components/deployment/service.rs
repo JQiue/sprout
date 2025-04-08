@@ -37,6 +37,17 @@ pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, Ap
   for tempfile in form.dist.iter() {
     let filename = tempfile.file_name.clone().unwrap();
     let target_path = base_dir.join(filename);
+    // extract_tar(
+    //   tempfile.file.path().to_string_lossy().to_string(),
+    //   "/tmp".to_string(),
+    // );
+    // let from = Path::new(
+    //   "/tmp/"
+    //     .to_string()
+    //     .push_str(&tempfile.file_name.unwrap().replace(".tar", "")),
+    // );
+    // + &tempfile.file_name.unwrap().replace(".tar", ""),
+    // fs_extra::copy_items(&[from], base_dir, &dir::CopyOptions::new()).unwrap();
     fs::copy(tempfile.file.path(), target_path)?;
   }
 
@@ -76,9 +87,9 @@ pub async fn publish_site(
     base_dir.canonicalize()?.to_string_lossy().to_string(),
   );
   trace!("{:?}", nginx_root_path);
-  let nginx_config = NginxConfig::new(domian.clone(), nginx_root_path, false, None);
+  let nginx_config = NginxConfig::new(&state.nginx_config_path, false);
 
-  if nginx_config.deploy(Path::new("/etc/nginx/sprout")) {
+  if nginx_config.deploy(&domian, "/etc/nginx/sprout") {
     state
       .master_rpc
       .update_deployment_status(
@@ -94,6 +105,14 @@ pub async fn publish_site(
   }
 }
 
+pub async fn revoke_site(state: &AppState, site_id: String) -> Result<Value, AppError> {
+  let base_dir = Path::new(&state.storage_path);
+  fs::remove_dir_all(base_dir.join(&site_id))?;
+  let nc = NginxConfig::new(&state.nginx_config_path, false);
+  nc.remove_config(&site_id);
+  Ok(json!({}))
+}
+
 #[cfg(test)]
 mod tests {
   use super::init_upload;
@@ -103,6 +122,7 @@ mod tests {
     let state = AppState {
       master_rpc: rpc::Master::Rpc::new("http://127.0.0.1:3000".to_string()),
       agent_token: "kjfklfa".to_string(),
+      nginx_config_path: "/etc/nginx/sprout".to_string(),
       storage_path: "./".to_string(),
       upload_token_key: "efkalwfewalkf".to_string(),
       upload_token_key_expire: 1000,

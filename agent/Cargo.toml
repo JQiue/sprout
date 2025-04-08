@@ -20,6 +20,5 @@ tracing-subscriber = { workspace = true, features = [
 ] }
 sysinfo = { workspace = true }
 
-
 [dev-dependencies]
 mockall = { workspace = true }

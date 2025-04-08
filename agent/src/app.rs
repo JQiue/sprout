@@ -15,6 +15,7 @@ pub struct AppState {
   pub agent_token: String,
   pub master_rpc: rpc::Master::Rpc,
   pub storage_path: String,
+  pub nginx_config_path: String,
   pub upload_token_key: String,
   pub upload_token_key_expire: i64,
 }
@@ -38,6 +39,7 @@ pub async fn start() -> Result<(), AppError> {
     master_rpc: rpc::Master::Rpc::new(app_config.master_url),
     agent_token: app_config.agent_token,
     storage_path: app_config.storage_path,
+    nginx_config_path: app_config.nginx_config_path,
     upload_token_key: app_config.upload_token_key,
     upload_token_key_expire: app_config.upload_token_key_expire,
   };

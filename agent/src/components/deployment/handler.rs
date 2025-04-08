@@ -7,7 +7,7 @@ use actix_web::{
 use crate::{
   app::AppState,
   components::deployment::{
-    model::{InitUploadBody, SitePublishBody, UploadForm},
+    model::{InitUploadBody, SitePublishBody, SiteRevokeBody, UploadForm},
     service,
   },
   error::AppError,
@@ -48,13 +48,13 @@ pub async fn publish_site(
   }
 }
 
-// #[post("/task/revoke")]
-// pub async fn publish_site(
-//   state: Data<AppState>,
-//   body: Json<SitePublishBody>,
-// ) -> Result<HttpResponse, AppError> {
-//   match service::revoke_site(&state, body.0.site_id, body.0.deployment_id).await {
-//     Ok(data) => Response::success(Some(data)),
-//     Err(err) => Response::<()>::error(err),
-//   }
-// }
+#[post("/task/revoke")]
+pub async fn revoke_site(
+  state: Data<AppState>,
+  body: Json<SiteRevokeBody>,
+) -> Result<HttpResponse, AppError> {
+  match service::revoke_site(&state, body.0.site_id).await {
+    Ok(data) => Response::success(Some(data)),
+    Err(err) => Response::<()>::error(err),
+  }
+}

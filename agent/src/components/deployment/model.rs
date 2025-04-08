@@ -19,3 +19,8 @@ pub struct SitePublishBody {
   pub site_id: String,
   pub deployment_id: u32,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct SiteRevokeBody {
+  pub site_id: String,
+}

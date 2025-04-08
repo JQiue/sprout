@@ -16,6 +16,10 @@ fn default_workers() -> usize {
   1
 }
 
+fn default_nginx_config_path() -> String {
+  "/etc/nginx/agent".to_string()
+}
+
 #[derive(Deserialize, Debug)]
 pub struct Config {
   #[serde(default = "default_workers")]
@@ -26,6 +30,8 @@ pub struct Config {
   pub port: u16,
   pub agent_token: String,
   pub master_url: String,
+  #[serde(default = "default_nginx_config_path")]
+  pub nginx_config_path: String,
   pub storage_path: String,
   pub upload_token_key: String,
   pub upload_token_key_expire: i64,
