@@ -1,6 +1,6 @@
 use std::{path::PathBuf, time::Duration};
 
-use log::trace;
+use log::{error, trace};
 use reqwest::multipart::{Form, Part};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -11,7 +11,8 @@ use crate::error::AppError;
 pub struct RpcResponse<T> {
   pub code: i32,
   pub msg: String,
-  pub data: T,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub data: Option<T>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -51,7 +52,12 @@ impl Rpc {
       .send()
       .await?;
     let data = resp.json::<RpcResponse<AgentHeartbeat>>().await?;
-    Ok(data.data)
+    if data.code != 0 {
+      error!("{}", data.msg);
+      Err(AppError::RpcCallError)
+    } else {
+      Ok(data.data.unwrap())
+    }
   }
 
   pub async fn init_upload_session(
@@ -71,8 +77,12 @@ impl Rpc {
       .send()
       .await?;
     let data = resp.json::<RpcResponse<InitUploadData>>().await?;
-    trace!("Response body: {:?}", data);
-    Ok(data.data)
+    if data.code != 0 {
+      error!("{}", data.msg);
+      Err(AppError::RpcCallError)
+    } else {
+      Ok(data.data.unwrap())
+    }
   }
 
   pub async fn upload_file(
@@ -81,7 +91,7 @@ impl Rpc {
     upload_token: String,
     deployment_id: u32,
     path: PathBuf,
-  ) {
+  ) -> Result<bool, AppError> {
     trace!(">>> {:?}", path);
     let path_buf = path.clone();
     let file_name = path
@@ -104,13 +114,14 @@ impl Rpc {
       .post(format!("http://{}:5001/api/upload/file", upload_url))
       .multipart(form)
       .send()
-      .await
-      .unwrap();
-    let bytes = resp.bytes().await.unwrap(); // 获取响应的字节流
-    trace!(">>> {:?}", String::from_utf8_lossy(&bytes)); // 将字节流转换为字符串并打印
-    let data: RpcResponse<()> = serde_json::from_slice(&bytes).unwrap();
-    // let data = resp.json::<RpcResponse<()>>().await.unwrap();
-    trace!(">>> {:?}", data);
+      .await?;
+    let data = resp.json::<RpcResponse<()>>().await?;
+    if data.code != 0 {
+      error!("{}", data.msg);
+      Ok(false)
+    } else {
+      Ok(true)
+    }
   }
 
   pub async fn task_publish(
@@ -118,7 +129,7 @@ impl Rpc {
     site_id: &str,
     deployment_id: u32,
     ip_address: &str,
-  ) -> TaskPublishData {
+  ) -> Result<TaskPublishData, AppError> {
     let resp = self
       .api_client
       .post(format!("http://{}:5001/api/task/publish", ip_address))
@@ -129,14 +140,16 @@ impl Rpc {
       .send()
       .await
       .unwrap();
-    let bytes = resp.bytes().await.unwrap(); // 获取响应的字节流
-    trace!(">>> {:?}", String::from_utf8_lossy(&bytes)); // 将字节流转换为字符串并打印
-    let data: RpcResponse<TaskPublishData> = serde_json::from_slice(&bytes).unwrap();
-    trace!(">>> {:?}", data);
-    data.data
+    let data = resp.json::<RpcResponse<TaskPublishData>>().await.unwrap();
+    if data.code != 0 {
+      error!("{}", data.msg);
+      Err(AppError::RpcCallError)
+    } else {
+      Ok(data.data.unwrap())
+    }
   }
 
-  pub async fn task_revoke(&self, site_id: &str, ip_address: &str) {
+  pub async fn task_revoke(&self, site_id: &str, ip_address: &str) -> Result<bool, AppError> {
     let resp = self
       .api_client
       .post(format!("http://{}:5001/api/task/revoke", ip_address))
@@ -144,12 +157,13 @@ impl Rpc {
         "site_id": site_id,
       }))
       .send()
-      .await
-      .unwrap();
-    let bytes = resp.bytes().await.unwrap(); // 获取响应的字节流
-    trace!(">>> {:?}", String::from_utf8_lossy(&bytes)); // 将字节流转换为字符串并打印
-    let data: RpcResponse<()> = serde_json::from_slice(&bytes).unwrap();
-    trace!(">>> {:?}", data);
-    data.data
+      .await?;
+    let data = resp.json::<RpcResponse<()>>().await.unwrap();
+    if data.code != 0 {
+      trace!("{}", data.msg);
+      Ok(false)
+    } else {
+      Ok(true)
+    }
   }
 }

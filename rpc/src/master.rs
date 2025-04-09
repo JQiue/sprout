@@ -177,7 +177,6 @@ impl Rpc {
       .send()
       .await
       .unwrap();
-
     let data = resp.json::<Response<AssignTaskData>>().await.unwrap();
     data.data.unwrap()
   }

@@ -115,17 +115,15 @@ pub async fn assign_task(
   if r#type == "publish" {
     let preview_url = rpc::Agent::Rpc::new()
       .task_publish(&site_id, deployment_id, &agent.ip_address)
-      .await
+      .await?
       .preview_url;
     return Ok(json!({
       "preview_url": preview_url
     }));
   } else if r#type == "revoke" {
     rpc::Agent::Rpc::new()
-      .task_revoke(&site_id, deployment_id, &agent.ip_address)
-      .await
-      .preview_url;
+      .task_revoke(&site_id, &agent.ip_address)
+      .await?;
   }
-
   Ok(Value::Null)
 }
