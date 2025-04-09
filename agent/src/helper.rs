@@ -73,14 +73,14 @@ impl NginxConfig {
     config
   }
 
-  pub fn remove_config(&self, site_id: &str) {
+  pub fn remove_config(&self, site_id: &str) -> Result<bool, std::io::Error> {
     let domian_config = self.config_path.join(site_id.to_string() + ".conf");
     if domian_config.exists() {
-      fs::remove_file(domian_config).unwrap_or_else(|_| {
-        error!("Failed to remove config file: {}.conf", site_id);
-      });
+      fs::remove_file(domian_config)?;
+      Ok(true)
     } else {
       error!("Config file does not exist: {}.conf", site_id);
+      Ok(false)
     }
   }
 

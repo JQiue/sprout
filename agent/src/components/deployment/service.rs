@@ -2,7 +2,7 @@ use std::{fs, path::Path};
 
 use rpc::Master::DeploymentStatus;
 use serde_json::{Value, json};
-use tracing::trace;
+use tracing::{error, trace};
 
 use crate::{
   app::AppState,
@@ -107,9 +107,11 @@ pub async fn publish_site(
 
 pub async fn revoke_site(state: &AppState, site_id: String) -> Result<Value, AppError> {
   let base_dir = Path::new(&state.storage_path);
-  fs::remove_dir_all(base_dir.join(&site_id))?;
+  fs::remove_dir_all(base_dir.join(&site_id)).unwrap_or_else(|_| {
+    error!("Failed to remove directory: {}", site_id);
+  });
   let nc = NginxConfig::new(&state.nginx_config_path, false);
-  nc.remove_config(&site_id);
+  nc.remove_config(&site_id)?;
   Ok(Value::Null)
 }
 
