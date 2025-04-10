@@ -7,7 +7,8 @@ enum Deployment {
   SiteId,           // 关联的站点 ID
   AgentId,          // 执行部署的 AgentID
   Status,           // pending, published, failed
-  UploadToken,      // 上传 token
+  DeployToken,      // 上传 Token
+  DeployUrl,        // 上传地址
   BuildLogs,        // 构建日志
   DeployPreviewUrl, // 部署预览 URL
   ExecutionTime,    // 执行时间（可以存储多个时间点）
@@ -31,7 +32,8 @@ impl MigrationTrait for Migration {
           .col(string(Deployment::Status).comment("部署状态: pending, building, published, failed"))
           .col(string_null(Deployment::BuildLogs).comment("构建日志"))
           .col(string_null(Deployment::DeployPreviewUrl).comment("部署预览 URL"))
-          .col(string_null(Deployment::UploadToken).comment("上传 token"))
+          .col(string_null(Deployment::DeployToken).comment("上传 token"))
+          .col(string_null(Deployment::DeployUrl).comment("上传地址"))
           .col(timestamp(Deployment::ExecutionTime).comment("执行时间（可以存储多个时间点）"))
           .col(timestamp(Deployment::CreatedAt).comment("创建时间"))
           .to_owned(),

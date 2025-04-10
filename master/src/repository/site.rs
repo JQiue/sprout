@@ -16,9 +16,9 @@ impl<'a> SiteRepository<'a> {
     site.insert(self.db).await
   }
 
-  // pub async fn update_site(&self, site: site::ActiveModel) -> Result<site::Model, DbErr> {
-  //   site.update(self.db).await
-  // }
+  pub async fn update_site(&self, site: site::ActiveModel) -> Result<site::Model, DbErr> {
+    site.update(self.db).await
+  }
 
   pub async fn has_site(&self, site_id: &str) -> Result<bool, DbErr> {
     Ok(
@@ -28,5 +28,12 @@ impl<'a> SiteRepository<'a> {
         .await?
         .is_some(),
     )
+  }
+
+  pub async fn get_site_by_id(&self, site_id: &str) -> Result<Option<site::Model>, DbErr> {
+    site::Entity::find()
+      .filter(site::Column::SiteId.eq(site_id))
+      .one(self.db)
+      .await
   }
 }

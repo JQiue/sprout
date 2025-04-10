@@ -45,10 +45,11 @@ impl Rpc {
     }
   }
 
-  pub async fn get_agent_heartbeat(&self, agent_ip: String) -> Result<AgentHeartbeat, AppError> {
+  pub async fn get_agent_heartbeat(&self, agent_ip: &str) -> Result<AgentHeartbeat, AppError> {
     let resp = self
       .api_client
       .get(format!("http://{agent_ip}:5001/api/heartbeat"))
+      .timeout(Duration::from_secs(3))
       .send()
       .await?;
     let data = resp.json::<RpcResponse<AgentHeartbeat>>().await?;
@@ -129,13 +130,16 @@ impl Rpc {
     site_id: &str,
     deployment_id: u32,
     ip_address: &str,
+    bandwidth: String,
   ) -> Result<TaskPublishData, AppError> {
     let resp = self
       .api_client
       .post(format!("http://{}:5001/api/task/publish", ip_address))
+      .timeout(Duration::from_secs(3))
       .json(&json!({
         "site_id": site_id,
-        "deployment_id": deployment_id
+        "deployment_id": deployment_id,
+        "bandwidth": bandwidth,
       }))
       .send()
       .await

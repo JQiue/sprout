@@ -45,8 +45,8 @@ pub struct CreateSiteData {
 pub struct CreateDeploymentData {
   pub site_id: String,
   pub deployment_id: u32,
-  pub upload_url: String,
-  pub upload_token: String,
+  pub deploy_url: String,
+  pub deploy_token: String,
   pub agent_id: u32,
 }
 

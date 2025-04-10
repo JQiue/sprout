@@ -4,15 +4,16 @@ use sea_orm_migration::{prelude::*, schema::*};
 #[derive(DeriveIden)]
 enum Site {
   Table,
-  Id,        // 主键 ID
-  SiteId,    // 站点 ID
-  UserId,    // 用户 ID
-  ServerId,  // 关联的服务器 ID
-  Name,      // 站点名称
-  Domain,    // 绑定域名
-  Status,    // 状态：active，disabled
-  CreatedAt, // 创建时间
-  UpdatedAt, // 更新时间
+  Id,           // 主键 ID
+  SiteId,       // 站点 ID
+  UserId,       // 用户 ID
+  DeploymentId, // 部署 ID
+  Name,         // 站点名称
+  Domain,       // 绑定域名
+  Bandwidth,    // 带宽
+  Status,       // 状态：active，disabled
+  CreatedAt,    // 创建时间
+  UpdatedAt,    // 更新时间
 }
 
 #[derive(Iden, EnumIter)]
@@ -38,12 +39,13 @@ impl MigrationTrait for Migration {
           .col(string(Site::SiteId).comment("站点ID"))
           .col(string(Site::UserId).comment("用户ID"))
           .col(
-            integer_null(Site::ServerId)
+            integer_null(Site::DeploymentId)
               .unsigned()
-              .comment("关联的服务器ID"),
+              .comment("部署 ID"),
           )
           .col(string(Site::Name).comment("站点名称"))
           .col(string_null(Site::Domain).comment("绑定域名"))
+          .col(integer_null(Site::Bandwidth).unsigned().comment("带宽"))
           .col(string(Site::Status).default("active").comment("状态"))
           .col(timestamp(Site::CreatedAt).comment("创建时间"))
           .col(timestamp_null(Site::UpdatedAt).comment("更新时间"))

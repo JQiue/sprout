@@ -15,6 +15,29 @@ pub enum SiteStatus {
   Disabled,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
+#[sea_orm(rs_type = "u32", db_type = "Integer")]
+#[serde(rename_all = "lowercase")]
+pub enum Bandwidth {
+  One = 1,
+  Two = 2,
+  Three = 3,
+  Four = 4,
+  Five = 5,
+}
+
+impl Bandwidth {
+  pub fn to_string(&self) -> String {
+    match self {
+      Bandwidth::One => "125k".to_string(),
+      Bandwidth::Two => "250k".to_string(),
+      Bandwidth::Three => "375k".to_string(),
+      Bandwidth::Four => "500k".to_string(),
+      Bandwidth::Five => "620k".to_string(),
+    }
+  }
+}
+
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
 #[sea_orm(table_name = "site")]
 pub struct Model {
@@ -22,10 +45,11 @@ pub struct Model {
   pub id: u32,
   pub site_id: String,
   pub user_id: String,
-  pub server_id: Option<u32>,
+  pub deployment_id: Option<u32>,
   pub name: String,
   pub domain: Option<String>,
   pub status: SiteStatus,
+  pub bandwidth: Bandwidth,
   pub created_at: DateTimeUtc,
   pub updated_at: Option<DateTimeUtc>,
 }

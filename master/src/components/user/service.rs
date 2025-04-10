@@ -79,8 +79,8 @@ pub async fn user_register(
     created_at: Set(utc_now()),
     ..Default::default()
   };
-  let user = state.repo.user().create_user(active_user).await?;
-  Ok(json!({ "insert_id": user.id }))
+  state.repo.user().create_user(active_user).await?;
+  Ok(Value::Null)
 }
 
 /// This function verifies the user's credentials and generates a JWT token upon successful authentication.
