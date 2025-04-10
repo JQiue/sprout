@@ -54,9 +54,9 @@ pub async fn start() -> Result<(), AppError> {
   let state = AppState {
     db: db.clone(),
     repo: RepositoryManager::new(db),
-    login_token_key: login_token_key,
-    register_agent_key: register_agent_key,
-    register_agent_key_expire: register_agent_key_expire,
+    login_token_key,
+    register_agent_key,
+    register_agent_key_expire,
   };
   Ok(
     HttpServer::new(move || {

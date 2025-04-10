@@ -190,8 +190,7 @@ pub fn get_cli_config() -> CliConfig {
       fs::write(home.join("./.pupup/config.json"), "{}").unwrap();
     }
     let config_str = fs::read_to_string(home.join("./.pupup/config.json")).unwrap();
-    let config = serde_json::from_str::<CliConfig>(&config_str).unwrap();
-    return config;
+    serde_json::from_str::<CliConfig>(&config_str).unwrap()
   } else {
     panic!("Faild to get home directory");
   }
@@ -224,8 +223,7 @@ pub fn get_project_config() -> ProjectConfig {
   }
 
   let config_str = fs::read_to_string("./.pupup/config.json").unwrap();
-  let config = serde_json::from_str::<ProjectConfig>(&config_str).unwrap();
-  config
+  serde_json::from_str::<ProjectConfig>(&config_str).unwrap()
 }
 
 pub fn set_project_config(config: ProjectConfig) {

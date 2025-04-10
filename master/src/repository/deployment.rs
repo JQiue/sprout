@@ -1,7 +1,4 @@
-use sea_orm::{
-  ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, DeriveActiveEnum, EntityTrait,
-  EnumIter, QueryFilter,
-};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter};
 
 use entity::deployment;
 
@@ -10,7 +7,7 @@ pub struct DeploymentRepository<'a> {
   pub db: &'a DatabaseConnection,
 }
 
-impl<'a> DeploymentRepository<'a> {
+impl DeploymentRepository<'_> {
   // pub async fn has_deployment(&self, id: u32) -> Result<bool, DbErr> {
   //   Ok(
   //     deployment::Entity::find()

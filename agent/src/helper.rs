@@ -40,10 +40,10 @@ pub fn extract_tar(filename: String, output: String) -> bool {
   let status = child.wait().expect("Failed to wait for build process");
   if status.success() {
     info!("{}: decompressed", filename);
-    return true;
+    true
   } else {
     error!("Build failed with status: {}", status);
-    return false;
+    false
   }
 }
 
@@ -98,14 +98,14 @@ impl NginxConfig {
       return false;
     }
 
-    if !fs::write(
+    if fs::write(
       self.config_path.join(format!("{}.conf", site_id)),
       config_content,
     )
     .map_err(|_| {
       tracing::error!("{}", "write Nginx configuration failed");
     })
-    .is_ok()
+    .is_err()
     {
       return false;
     }
@@ -115,16 +115,16 @@ impl NginxConfig {
     }
 
     // 测试配置是否正确
-    if !Command::new("nginx").arg("-t").status().is_ok() {
+    if Command::new("nginx").arg("-t").status().is_err() {
       tracing::error!("{}", "Nginx configuration test failed");
       return false;
     }
     // 重新加载 Nginx
-    if !Command::new("nginx")
+    if Command::new("nginx")
       .arg("-s")
       .arg("reload")
       .status()
-      .is_ok()
+      .is_err()
     {
       tracing::error!("{}", "reload Nginx failed");
       return false;

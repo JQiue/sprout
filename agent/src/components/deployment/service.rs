@@ -25,13 +25,11 @@ pub async fn init_upload(state: &AppState, site_id: String) -> Result<Value, App
 }
 
 pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, AppError> {
-  jwt::verify::<String>(&form.upload_token, &state.upload_token_key)?
-    .claims
-    .data;
+  jwt::verify::<String>(&form.upload_token, &state.upload_token_key)?;
   let base_dir = Path::new(&state.storage_path);
 
   if !base_dir.exists() {
-    fs::create_dir_all(&base_dir)?;
+    fs::create_dir_all(base_dir)?;
   }
 
   for tempfile in form.dist.iter() {
@@ -60,16 +58,12 @@ pub async fn publish_site(
   let base_dir = Path::new(&state.storage_path);
 
   if !base_dir.exists() {
-    fs::create_dir_all(&base_dir)?;
+    fs::create_dir_all(base_dir)?;
   }
 
   // 申请预览域名
   let domian = generate_domian(&format!("preview_{site_id}"));
-  let nginx_root_path = format!(
-    "{}/{}",
-    base_dir.canonicalize()?.to_string_lossy().to_string(),
-    site_id
-  );
+  let nginx_root_path = format!("{}/{}", base_dir.canonicalize()?.to_string_lossy(), site_id);
   // 解压 tar
   if !extract_tar(
     nginx_root_path.clone() + ".tar",

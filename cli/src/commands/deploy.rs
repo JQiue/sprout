@@ -31,14 +31,14 @@ fn audit_project(path: String) {
   if !path.exists() {
     panic!("Path does not exist: {:?}", path);
   }
-  let keywords = load_keywords_from_embedded(&vec![
+  let keywords = load_keywords_from_embedded(&[
     "./涉枪涉爆违法信息关键词.txt",
     "./色情类.txt",
     "./政治类.txt",
   ]);
-  let necative_keywords = load_keywords_from_embedded(&vec!["./否定关键词.txt"]);
+  let necative_keywords = load_keywords_from_embedded(&["./否定关键词.txt"]);
   let res = audit_directory(path, &keywords, &necative_keywords).expect("Cannot audit directory");
-  if res.len() != 0 {
+  if !res.is_empty() {
     trace!("{:?}", res);
     panic!("Audit failed")
   }
@@ -109,7 +109,7 @@ pub fn build_project(project_type: ProjectType) -> String {
       if !Path::new(&path).exists() {
         panic!("not found index.html")
       }
-      return cli.target.unwrap();
+      cli.target.unwrap()
     }
     ProjectType::Unknown => panic!("Unknown project type"),
   }
@@ -122,7 +122,7 @@ async fn deploy_project(path: String) -> String {
     if let Some(site_id) = get_project_config().site_id {
       let path = tar_directory(path.clone(), &site_id);
       let deploy_data = master_rpc.create_deployment(&site_id, &token).await;
-      agent_rpc
+      let _ = agent_rpc
         .upload_file(
           deploy_data.deploy_url,
           deploy_data.deploy_token,
@@ -143,7 +143,7 @@ async fn deploy_project(path: String) -> String {
       let deploy_data = master_rpc
         .create_deployment(&create_site_data.site_id, &token)
         .await;
-      agent_rpc
+      let _ = agent_rpc
         .upload_file(
           deploy_data.deploy_url,
           deploy_data.deploy_token,
@@ -167,7 +167,7 @@ async fn deploy_project(path: String) -> String {
     let deploy_data = master_rpc
       .create_deployment(&create_site_data.site_id, &token)
       .await;
-    agent_rpc
+    let _ = agent_rpc
       .upload_file(
         deploy_data.deploy_url,
         deploy_data.deploy_token,

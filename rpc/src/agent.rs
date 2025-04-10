@@ -38,6 +38,12 @@ pub struct Rpc {
   api_client: reqwest::Client,
 }
 
+impl Default for Rpc {
+  fn default() -> Self {
+    Self::new()
+  }
+}
+
 impl Rpc {
   pub fn new() -> Self {
     Self {

@@ -13,7 +13,7 @@ pub struct AgentRepository<'a> {
   pub db: &'a DatabaseConnection,
 }
 
-impl<'a> AgentRepository<'a> {
+impl AgentRepository<'_> {
   pub async fn get_avaliable_agent(&self) -> Result<Option<agent::Model>, DbErr> {
     agent::Entity::find()
       .filter(agent::Column::Status.eq(AgentStatus::Online))

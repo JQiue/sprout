@@ -7,7 +7,7 @@ pub struct SiteRepository<'a> {
   pub db: &'a DatabaseConnection,
 }
 
-impl<'a> SiteRepository<'a> {
+impl SiteRepository<'_> {
   // pub async fn get_sites(&self) -> Result<Vec<site::Model>, DbErr> {
   //   site::Entity::find().all(self.db).await
   // }

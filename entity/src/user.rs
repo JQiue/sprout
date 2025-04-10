@@ -10,7 +10,6 @@ use serde::{Deserialize, Serialize};
   db_type = "String(StringLen::None)",
   rename_all = "lowercase"
 )]
-
 pub enum UserStatus {
   Active,  // 正常
   Deleted, // 已删除
