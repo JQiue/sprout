@@ -2,7 +2,7 @@ use std::{fs, path::Path};
 
 use rpc::Master::DeploymentStatus;
 use serde_json::{Value, json};
-use tracing::{error, trace};
+use tracing::{debug, error};
 
 use crate::{
   app::AppState,
@@ -67,6 +67,7 @@ pub async fn publish_site(
   state: &AppState,
   site_id: String,
   deployment_id: u32,
+  bandwidth: String,
 ) -> Result<Value, AppError> {
   let base_dir = Path::new(&state.storage_path);
 
@@ -82,14 +83,16 @@ pub async fn publish_site(
     site_id
   );
   // 解压 tar
-  extract_tar(
+  if !extract_tar(
     nginx_root_path.clone() + ".tar",
     base_dir.canonicalize()?.to_string_lossy().to_string(),
-  );
-  trace!("{:?}", nginx_root_path);
+  ) {
+    return Err(AppError::Error);
+  };
+  debug!("nginx_root_path: {:?}", nginx_root_path);
   let nginx_config = NginxConfig::new(&state.nginx_config_path, false);
 
-  if nginx_config.deploy(&domian, "/etc/nginx/sprout") {
+  if nginx_config.deploy(&domian, &nginx_root_path, &bandwidth, &site_id) {
     state
       .master_rpc
       .update_deployment_status(

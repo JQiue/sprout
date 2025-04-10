@@ -18,6 +18,7 @@ pub struct UploadForm {
 pub struct SitePublishBody {
   pub site_id: String,
   pub deployment_id: u32,
+  pub bandwidth: String,
 }
 
 #[derive(Debug, Deserialize)]

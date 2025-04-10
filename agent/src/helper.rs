@@ -5,16 +5,16 @@ use std::{
   path::PathBuf,
   process::{Command, Stdio},
 };
-use tracing::{error, trace};
+use tracing::{debug, error, info, trace};
 
 pub fn generate_domian(site_id: &str) -> String {
   format!("{site_id}.is.me")
 }
 
-pub fn extract_tar(filename: String, output: String) {
+pub fn extract_tar(filename: String, output: String) -> bool {
   let mut child = Command::new("tar")
     .arg("-xf")
-    .arg(filename)
+    .arg(&filename)
     .arg("-C")
     .arg(output)
     .stdout(Stdio::piped())
@@ -39,9 +39,11 @@ pub fn extract_tar(filename: String, output: String) {
   }
   let status = child.wait().expect("Failed to wait for build process");
   if status.success() {
-    println!("Build succeeded!");
+    info!("{}: decompressed", filename);
+    return true;
   } else {
-    println!("Build failed with status: {}", status);
+    error!("Build failed with status: {}", status);
+    return false;
   }
 }
 
@@ -59,7 +61,7 @@ impl NginxConfig {
     }
   }
 
-  pub fn generate_config(&self, domain: &str, root_path: &str) -> String {
+  pub fn generate_config(&self, domain: &str, root_path: &str, bandwidth: &str) -> String {
     let mut config = String::new();
     config.push_str("server {\n");
     config.push_str("    listen 80;\n");
@@ -68,8 +70,10 @@ impl NginxConfig {
     config.push_str("        try_files $uri $uri/ /index.html;\n");
     config.push_str(&format!("        root {};\n", root_path));
     config.push_str("        index index.html;\n");
+    config.push_str(&format!("        limit_rate {};\n", bandwidth));
     config.push_str("    }\n");
     config.push_str("}\n");
+    debug!("Nginx config: {}", config);
     config
   }
 
@@ -79,14 +83,14 @@ impl NginxConfig {
       fs::remove_file(domian_config)?;
       Ok(true)
     } else {
-      error!("Config file does not exist: {}.conf", site_id);
+      error!("Config file does not exist: {:?}", domian_config);
       Ok(false)
     }
   }
 
-  pub fn deploy(&self, domain: &str, root_path: &str) -> bool {
+  pub fn deploy(&self, domain: &str, root_path: &str, bandwidth: &str, site_id: &str) -> bool {
     // 生成配置文件内容
-    let config_content = self.generate_config(domain, root_path);
+    let config_content = self.generate_config(domain, root_path, bandwidth);
 
     // 暂时简单写入，以后替换为原子写入
     if let Err(e) = fs::create_dir_all(self.config_path.as_path()) {
@@ -95,7 +99,7 @@ impl NginxConfig {
     }
 
     if !fs::write(
-      self.config_path.join(format!("{}.conf", domain)),
+      self.config_path.join(format!("{}.conf", site_id)),
       config_content,
     )
     .map_err(|_| {
@@ -138,13 +142,16 @@ mod test {
   #[test]
   pub fn test_deploy() {
     let nc = NginxConfig::new("/etc/nginx/sprout", false);
-    println!("{}", nc.generate_config("jinqiu.wang", "/var/www/html"));
-    nc.deploy("jinqiu.wang", "/var/www/html");
+    println!(
+      "{}",
+      nc.generate_config("jinqiu.wang", "/var/www/html", "100")
+    );
+    nc.deploy("jinqiu.wang", "/var/www/html", "100", "abcdefghijklmn");
   }
 
   #[test]
   pub fn test_revoke() {
     let nc = NginxConfig::new("/etc/nginx/sprout", false);
-    nc.remove_config("jinqiu.wang");
+    nc.remove_config("abcdefghijklmn").unwrap();
   }
 }

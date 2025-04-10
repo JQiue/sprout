@@ -42,7 +42,14 @@ pub async fn publish_site(
   state: Data<AppState>,
   body: Json<SitePublishBody>,
 ) -> Result<HttpResponse, AppError> {
-  match service::publish_site(&state, body.0.site_id, body.0.deployment_id).await {
+  match service::publish_site(
+    &state,
+    body.0.site_id,
+    body.0.deployment_id,
+    body.0.bandwidth,
+  )
+  .await
+  {
     Ok(data) => Response::success(Some(data)),
     Err(err) => Response::<()>::error(err),
   }
