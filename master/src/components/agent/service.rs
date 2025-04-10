@@ -1,6 +1,6 @@
 use entity::agent::{self, AgentStatus};
 use helpers::{jwt, time::utc_now};
-use sea_orm::{ActiveModelTrait, Set};
+use sea_orm::{ActiveModelTrait, IntoActiveModel, Set};
 use serde_json::{Value, json};
 
 use crate::{app::AppState, error::AppError};
@@ -47,8 +47,11 @@ pub async fn register_agent(
 pub async fn get_agent_status(state: &AppState, agent_id: u32) -> Result<Value, AppError> {
   if let Some(agent) = state.repo.agent().get_agent(agent_id).await? {
     let data = rpc::Agent::Rpc::new()
-      .get_agent_heartbeat(agent.ip_address)
+      .get_agent_heartbeat(&agent.ip_address)
       .await?;
+    let mut active_agent = agent.into_active_model();
+    active_agent.last_heartbeat = Set(Some(utc_now()));
+    state.repo.agent().update_agent(active_agent).await?;
     Ok(json!({
       "cpu_cores" : data.cpu_cores,
       "cpu_usage" : data.cpu_usage,
@@ -99,6 +102,11 @@ pub async fn assign_task(
   site_id: String,
   deployment_id: u32,
 ) -> Result<Value, AppError> {
+  let site = if let Some(site) = state.repo.site().get_site_by_id(&site_id).await? {
+    site
+  } else {
+    return Err(AppError::SiteNotFound);
+  };
   let deployment = state
     .repo
     .deployment()
@@ -114,7 +122,12 @@ pub async fn assign_task(
 
   if r#type == "publish" {
     let preview_url = rpc::Agent::Rpc::new()
-      .task_publish(&site_id, deployment_id, &agent.ip_address)
+      .task_publish(
+        &site_id,
+        deployment_id,
+        &agent.ip_address,
+        site.bandwidth.to_string(),
+      )
       .await?
       .preview_url;
     return Ok(json!({

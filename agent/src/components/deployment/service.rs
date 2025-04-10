@@ -37,17 +37,6 @@ pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, Ap
   for tempfile in form.dist.iter() {
     let filename = tempfile.file_name.clone().unwrap();
     let target_path = base_dir.join(filename);
-    // extract_tar(
-    //   tempfile.file.path().to_string_lossy().to_string(),
-    //   "/tmp".to_string(),
-    // );
-    // let from = Path::new(
-    //   "/tmp/"
-    //     .to_string()
-    //     .push_str(&tempfile.file_name.unwrap().replace(".tar", "")),
-    // );
-    // + &tempfile.file_name.unwrap().replace(".tar", ""),
-    // fs_extra::copy_items(&[from], base_dir, &dir::CopyOptions::new()).unwrap();
     fs::copy(tempfile.file.path(), target_path)?;
   }
 
@@ -59,7 +48,6 @@ pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, Ap
       DeploymentStatus::Uploaded,
     )
     .await?;
-
   Ok(Value::Null)
 }
 

@@ -8,14 +8,14 @@ use std::{
 };
 
 use crate::{
+  Cli, MASTER_URL,
   helper::{
     audit_directory, get_cli_config, get_project_config, load_keywords_from_embedded,
     set_project_config, tar_directory,
   },
-  Cli, MASTER_URL,
 };
 use clap::Parser;
-use console::{style, Emoji};
+use console::{Emoji, style};
 use indicatif::{ProgressBar, ProgressStyle};
 use log::trace;
 
@@ -124,8 +124,8 @@ async fn deploy_project(path: String) -> String {
       let deploy_data = master_rpc.create_deployment(&site_id, &token).await;
       agent_rpc
         .upload_file(
-          deploy_data.upload_url,
-          deploy_data.upload_token,
+          deploy_data.deploy_url,
+          deploy_data.deploy_token,
           deploy_data.deployment_id,
           path,
         )
@@ -145,8 +145,8 @@ async fn deploy_project(path: String) -> String {
         .await;
       agent_rpc
         .upload_file(
-          deploy_data.upload_url,
-          deploy_data.upload_token,
+          deploy_data.deploy_url,
+          deploy_data.deploy_token,
           deploy_data.deployment_id,
           path,
         )
@@ -169,8 +169,8 @@ async fn deploy_project(path: String) -> String {
       .await;
     agent_rpc
       .upload_file(
-        deploy_data.upload_url,
-        deploy_data.upload_token,
+        deploy_data.deploy_url,
+        deploy_data.deploy_token,
         deploy_data.deployment_id,
         path,
       )

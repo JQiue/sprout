@@ -6,9 +6,13 @@ use serde_json::{Value, json};
 use crate::{app::AppState, error::AppError};
 
 pub async fn create_deployment(state: &AppState, site_id: String) -> Result<Value, AppError> {
-  if !state.repo.site().has_site(&site_id).await? {
+  let mut active_site = if let Some(site) = state.repo.site().get_site_by_id(&site_id).await? {
+    site
+  } else {
     return Err(AppError::SiteNotFound);
   }
+  .into_active_model();
+
   if let Some(agent) = state.repo.agent().get_avaliable_agent().await? {
     let deployment = state
       .repo
@@ -22,22 +26,24 @@ pub async fn create_deployment(state: &AppState, site_id: String) -> Result<Valu
         ..Default::default()
       })
       .await?;
-    let agent_rpc = rpc::Agent::Rpc::new();
-    let init_response = agent_rpc
+    let init_response = rpc::Agent::Rpc::new()
       .init_upload_session(&agent.ip_address, &deployment.site_id, deployment.id)
       .await?;
     let mut active_deployment = deployment.into_active_model();
     active_deployment.status = Set(DeploymentStatus::Uploading);
-    active_deployment.upload_token = Set(Some(init_response.upload_token.clone()));
+    active_deployment.deploy_token = Set(Some(init_response.upload_token.clone()));
+    active_deployment.deploy_url = Set(Some(agent.ip_address));
     let deployment = state
       .repo
       .deployment()
       .update_deployment(active_deployment)
       .await?;
+    active_site.deployment_id = Set(Some(deployment.id));
+    state.repo.site().update_site(active_site).await?;
     Ok(json!({
-        "upload_url": agent.ip_address,
-        "upload_token": init_response.upload_token,
-        "site_id": site_id,
+        "deploy_url": deployment.deploy_url,
+        "deploy_token": deployment.deploy_token,
+        "site_id": deployment.site_id,
         "agent_id": deployment.agent_id,
         "deployment_id": deployment.id,
     }))

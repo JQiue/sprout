@@ -95,8 +95,8 @@ impl From<envy::Error> for AppError {
 
 impl From<helpers::jwt::Error> for AppError {
   fn from(err: helpers::jwt::Error) -> Self {
-    tracing::error!("{:#?}", err);
-    AppError::Error
+    tracing::error!("{:#?}", err.kind());
+    Self::Authorization
   }
 }
 

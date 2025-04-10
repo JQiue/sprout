@@ -34,7 +34,8 @@ pub struct Model {
   pub status: DeploymentStatus,
   pub build_logs: Option<String>,
   pub deploy_preview_url: Option<String>,
-  pub upload_token: Option<String>,
+  pub deploy_url: Option<String>,
+  pub deploy_token: Option<String>,
   pub execution_time: DateTimeUtc,
   pub created_at: DateTimeUtc,
 }

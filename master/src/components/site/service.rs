@@ -33,6 +33,7 @@ pub async fn create_site(
       site_id: Set(nanoid(&Alphabet::LOWER, 25)),
       name: Set(site_name),
       user_id: Set(user_id),
+      bandwidth: Set(site::Bandwidth::One),
       created_at: Set(utc_now()),
       ..Default::default()
     })
