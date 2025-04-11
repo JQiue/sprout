@@ -1,3 +1,5 @@
+use std::{net::Ipv4Addr, str::FromStr};
+
 use entity::agent::{self, AgentStatus};
 use helpers::{jwt, time::utc_now};
 use sea_orm::{ActiveModelTrait, IntoActiveModel, Set};
@@ -46,7 +48,7 @@ pub async fn register_agent(
 
 pub async fn get_agent_status(state: &AppState, agent_id: u32) -> Result<Value, AppError> {
   if let Some(agent) = state.repo.agent().get_agent(agent_id).await? {
-    let data = rpc::Agent::Rpc::new()
+    let data = rpc::AgentRpc::new()
       .get_agent_heartbeat(&agent.ip_address)
       .await?;
     let mut active_agent = agent.into_active_model();
@@ -119,22 +121,31 @@ pub async fn assign_task(
     .get_agent(deployment.agent_id)
     .await?
     .ok_or(AppError::AgentNotFound)?;
-
+  state
+    .cloudflare_rpc
+    .create_a_record(
+      &("preview_".to_string() + &site_id),
+      Ipv4Addr::from_str(&agent.ip_address)?,
+    )
+    .await;
+  let domain = format!("preview_{}.jinqiu.wang", site_id);
   if r#type == "publish" {
-    let preview_url = rpc::Agent::Rpc::new()
+    let preview_url = state
+      .agent_rpc
       .task_publish(
         &site_id,
         deployment_id,
         &agent.ip_address,
-        site.bandwidth.to_string(),
+        site.bandwidth.to_string().as_str(),
+        &domain,
       )
-      .await?
-      .preview_url;
+      .await?;
     return Ok(json!({
-      "preview_url": preview_url
+      "preview_url": "http://".to_string() + &domain
     }));
   } else if r#type == "revoke" {
-    rpc::Agent::Rpc::new()
+    state
+      .agent_rpc
       .task_revoke(&site_id, &agent.ip_address)
       .await?;
   }

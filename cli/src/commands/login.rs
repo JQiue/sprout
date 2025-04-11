@@ -5,8 +5,8 @@ use dialoguer::Password;
 use log::trace;
 
 use crate::{
-  helper::{get_cli_config, set_cli_config},
   MASTER_URL,
+  helper::{get_cli_config, set_cli_config},
 };
 
 pub async fn login() {
@@ -37,7 +37,7 @@ pub async fn login() {
     .interact()
     .unwrap();
   trace!(">>> username: {username}, password: {password}");
-  let rpc = rpc::Master::Rpc::new(MASTER_URL.to_string());
+  let rpc = rpc::MasterRpc::new(MASTER_URL.to_string());
   let token = rpc.login(username, password).await;
   trace!(">>> token: {token}");
   let mut cli_config = get_cli_config();

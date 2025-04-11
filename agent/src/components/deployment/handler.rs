@@ -47,6 +47,7 @@ pub async fn publish_site(
     body.0.site_id,
     body.0.deployment_id,
     body.0.bandwidth,
+    body.0.preview_url,
   )
   .await
   {

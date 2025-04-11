@@ -19,6 +19,7 @@ pub struct SitePublishBody {
   pub site_id: String,
   pub deployment_id: u32,
   pub bandwidth: String,
+  pub preview_url: String,
 }
 
 #[derive(Debug, Deserialize)]

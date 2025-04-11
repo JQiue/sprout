@@ -1,6 +1,6 @@
 use std::{fs, path::Path};
 
-use rpc::Master::DeploymentStatus;
+use rpc::DeploymentStatus;
 use serde_json::{Value, json};
 use tracing::{debug, error};
 
@@ -54,6 +54,7 @@ pub async fn publish_site(
   site_id: String,
   deployment_id: u32,
   bandwidth: String,
+  preview_url: String,
 ) -> Result<Value, AppError> {
   let base_dir = Path::new(&state.storage_path);
 
@@ -62,7 +63,7 @@ pub async fn publish_site(
   }
 
   // 申请预览域名
-  let domian = generate_domian(&format!("preview_{site_id}"));
+  // let domian = generate_domian(&format!("preview_{site_id}"));
   let nginx_root_path = format!("{}/{}", base_dir.canonicalize()?.to_string_lossy(), site_id);
   // 解压 tar
   if !extract_tar(
@@ -74,7 +75,7 @@ pub async fn publish_site(
   debug!("nginx_root_path: {:?}", nginx_root_path);
   let nginx_config = NginxConfig::new(&state.nginx_config_path, false);
 
-  if nginx_config.deploy(&domian, &nginx_root_path, &bandwidth, &site_id) {
+  if nginx_config.deploy(&preview_url, &nginx_root_path, &bandwidth, &site_id) {
     state
       .master_rpc
       .update_deployment_status(
@@ -83,8 +84,7 @@ pub async fn publish_site(
         DeploymentStatus::Published,
       )
       .await?;
-    let preview_url = format!("http://{}", domian);
-    Ok(json!({ "preview_url": preview_url   }))
+    Ok(Value::Null)
   } else {
     Err(AppError::Error)
   }
@@ -107,7 +107,7 @@ mod tests {
   #[actix_web::test]
   async fn test_init_upload() {
     let state = AppState {
-      master_rpc: rpc::Master::Rpc::new("http://127.0.0.1:3000".to_string()),
+      master_rpc: rpc::MasterRpc::new("http://127.0.0.1:3000".to_string()),
       agent_token: "kjfklfa".to_string(),
       nginx_config_path: "/etc/nginx/sprout".to_string(),
       storage_path: "./".to_string(),

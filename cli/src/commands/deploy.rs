@@ -116,8 +116,8 @@ pub fn build_project(project_type: ProjectType) -> String {
 }
 
 async fn deploy_project(path: String) -> String {
-  let master_rpc = rpc::Master::Rpc::new(MASTER_URL.to_string());
-  let agent_rpc = rpc::Agent::Rpc::new();
+  let master_rpc = rpc::MasterRpc::new(MASTER_URL.to_string());
+  let agent_rpc = rpc::AgentRpc::new();
   if let Some(token) = get_cli_config().token {
     if let Some(site_id) = get_project_config().site_id {
       let path = tar_directory(path.clone(), &site_id);

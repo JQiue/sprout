@@ -5,6 +5,7 @@ use actix_web::{
   App, HttpServer, middleware,
   web::{self, ServiceConfig},
 };
+use rpc::{AgentRpc, CloudflareRpc};
 use sea_orm::DatabaseConnection;
 
 use crate::{
@@ -25,6 +26,8 @@ pub struct AppState {
   pub login_token_key: String,
   pub register_agent_key: String,
   pub register_agent_key_expire: i64,
+  pub agent_rpc: rpc::AgentRpc,
+  pub cloudflare_rpc: rpc::CloudflareRpc,
 }
 
 pub fn config_app(cfg: &mut ServiceConfig) {
@@ -47,7 +50,9 @@ pub async fn start() -> Result<(), AppError> {
     login_token_key,
     register_agent_key,
     register_agent_key_expire,
-    ..
+    cloudflare_zone_id,
+    cloudflare_api_key,
+    cloudflare_email,
   } = Config::from_env()?;
   let db = migrate(&database_url).await?;
   db.ping().await?;
@@ -57,6 +62,9 @@ pub async fn start() -> Result<(), AppError> {
     login_token_key,
     register_agent_key,
     register_agent_key_expire,
+    agent_rpc: AgentRpc::new(),
+    cloudflare_rpc: CloudflareRpc::new(cloudflare_zone_id, cloudflare_email, cloudflare_api_key)
+      .await,
   };
   Ok(
     HttpServer::new(move || {

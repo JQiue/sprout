@@ -26,7 +26,7 @@ pub async fn create_deployment(state: &AppState, site_id: String) -> Result<Valu
         ..Default::default()
       })
       .await?;
-    let init_response = rpc::Agent::Rpc::new()
+    let init_response = rpc::AgentRpc::new()
       .init_upload_session(&agent.ip_address, &deployment.site_id, deployment.id)
       .await?;
     let mut active_deployment = deployment.into_active_model();

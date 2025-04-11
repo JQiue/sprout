@@ -127,3 +127,10 @@ impl From<rpc::error::AppError> for AppError {
     AppError::RpcCallError
   }
 }
+
+impl From<std::net::AddrParseError> for AppError {
+  fn from(err: std::net::AddrParseError) -> Self {
+    tracing::error!("{:#?}", err);
+    AppError::Error
+  }
+}

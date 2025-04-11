@@ -16,3 +16,7 @@ reqwest = { workspace = true, default-features = false, features = [
   "multipart",
   "stream",
 ] }
+cloudflare = { workspace = true, default-features = false, features = [
+  "rustls-tls",
+] }
+tokio = { workspace = true, features = ["full"] }

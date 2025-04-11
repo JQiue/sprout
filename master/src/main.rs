@@ -2,7 +2,6 @@ use tracing::level_filters::LevelFilter;
 use tracing_subscriber::{EnvFilter, filter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
 mod app;
-mod cloudflare;
 mod components;
 mod config;
 mod error;
