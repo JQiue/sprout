@@ -3,13 +3,11 @@ use actix_web::{
   HttpResponse, post,
   web::{Data, Json},
 };
+use common::agent::{InitUploadRequest, TaskPublishRequest, TaskRevokeRequest};
 
 use crate::{
   app::AppState,
-  components::deployment::{
-    model::{InitUploadBody, SitePublishBody, SiteRevokeBody, UploadForm},
-    service,
-  },
+  components::deployment::{model::UploadForm, service},
   error::AppError,
   response::Response,
 };
@@ -17,10 +15,9 @@ use crate::{
 #[post("/upload/init")]
 pub async fn init_upload(
   state: Data<AppState>,
-  body: Json<InitUploadBody>,
+  body: Json<InitUploadRequest>,
 ) -> Result<HttpResponse, AppError> {
-  let Json(InitUploadBody { site_id }) = body;
-  match service::init_upload(&state, site_id).await {
+  match service::init_upload(&state, body.0.site_id).await {
     Ok(data) => Response::success(Some(data)),
     Err(err) => Response::<()>::error(err),
   }
@@ -40,14 +37,14 @@ pub async fn file_upload(
 #[post("/task/publish")]
 pub async fn publish_site(
   state: Data<AppState>,
-  body: Json<SitePublishBody>,
+  body: Json<TaskPublishRequest>,
 ) -> Result<HttpResponse, AppError> {
   match service::publish_site(
     &state,
     body.0.site_id,
-    body.0.deployment_id,
     body.0.bandwidth,
-    body.0.preview_url,
+    body.0.bind_domain,
+    body.0.preview_domain,
   )
   .await
   {
@@ -59,7 +56,7 @@ pub async fn publish_site(
 #[post("/task/revoke")]
 pub async fn revoke_site(
   state: Data<AppState>,
-  body: Json<SiteRevokeBody>,
+  body: Json<TaskRevokeRequest>,
 ) -> Result<HttpResponse, AppError> {
   match service::revoke_site(&state, body.0.site_id).await {
     Ok(data) => Response::success(Some(data)),

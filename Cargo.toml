@@ -1,5 +1,5 @@
 [workspace]
-members = ["master", "agent", "cli", "migration", "entity", "rpc"]
+members = ["master", "agent", "cli", "migration", "entity", "rpc", "common"]
 
 [workspace.package]
 version = "0.0.1"
@@ -8,9 +8,10 @@ edition = "2024"
 publish = false
 
 [workspace.dependencies]
-entity = { path = "./entity" }
-migration = { path = "./migration" }
-rpc = { path = "./rpc" }
+entity = { path = "entity" }
+migration = { path = "migration" }
+rpc = { path = "rpc" }
+common = { path = "common" }
 actix-cors = "0.7.1"
 actix-web = { version = "4.10.1" }
 actix-web-httpauth = "0.8.2"

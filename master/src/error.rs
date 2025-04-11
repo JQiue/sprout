@@ -14,7 +14,6 @@ pub enum AppError {
   PasswordError,
   AgentExist,
   AgentNotFound,
-  AgentAuthFailed,
   DeploymentNotFound,
   RpcCallError,
   NotImplemented,
@@ -34,11 +33,10 @@ impl AppError {
       AppError::PasswordError => 1007,
       AppError::AgentExist => 2000,
       AppError::AgentNotFound => 2001,
-      AppError::AgentAuthFailed => 2002,
-      AppError::DeploymentNotFound => 2003,
-      AppError::SiteNotFound => 2004,
-      AppError::NotImplemented => 3000,
+      AppError::DeploymentNotFound => 2002,
+      AppError::SiteNotFound => 2003,
       AppError::RpcCallError => 3001,
+      AppError::NotImplemented => 9999,
     }
   }
   pub fn message(&self) -> String {
@@ -55,7 +53,6 @@ impl AppError {
       AppError::AgentExist => "Agent exist".to_string(),
       AppError::AgentNotFound => "Agent not found".to_string(),
       AppError::DeploymentNotFound => "Deployment not found".to_string(),
-      AppError::AgentAuthFailed => "Agent auth Failed".to_string(),
       AppError::RpcCallError => "Rpc call error".to_string(),
       AppError::SiteNotFound => "Site not found".to_string(),
     }

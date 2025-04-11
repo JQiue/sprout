@@ -1,6 +1,9 @@
 use std::{net::Ipv4Addr, str::FromStr};
 
-use entity::agent::{self, AgentStatus};
+use entity::{
+  agent::{self, AgentStatus},
+  deployment::DeploymentStatus,
+};
 use helpers::{jwt, time::utc_now};
 use sea_orm::{ActiveModelTrait, IntoActiveModel, Set};
 use serde_json::{Value, json};
@@ -121,32 +124,39 @@ pub async fn assign_task(
     .get_agent(deployment.agent_id)
     .await?
     .ok_or(AppError::AgentNotFound)?;
+  let preview_domain = format!("preview_{}.jinqiu.wang", site_id);
   state
     .cloudflare_rpc
-    .create_a_record(
-      &("preview_".to_string() + &site_id),
-      Ipv4Addr::from_str(&agent.ip_address)?,
-    )
+    .create_a_record(&preview_domain, Ipv4Addr::from_str(&agent.ip_address)?)
     .await;
-  let domain = format!("preview_{}.jinqiu.wang", site_id);
   if r#type == "publish" {
-    let preview_url = state
+    state
       .agent_rpc
       .task_publish(
-        &site_id,
+        site_id,
         deployment_id,
-        &agent.ip_address,
-        site.bandwidth.to_string().as_str(),
-        &domain,
+        agent.ip_address,
+        site.bandwidth.to_string(),
+        site.domain,
+        preview_domain.clone(),
       )
       .await?;
+    let preview_url = "http://".to_string() + &preview_domain;
+    let mut active_deployment = deployment.into_active_model();
+    active_deployment.status = Set(DeploymentStatus::Published);
+    active_deployment.deploy_preview_url = Set(Some(preview_url.clone()));
+    state
+      .repo
+      .deployment()
+      .update_deployment(active_deployment)
+      .await?;
     return Ok(json!({
-      "preview_url": "http://".to_string() + &domain
+      "preview_url": preview_url
     }));
   } else if r#type == "revoke" {
     state
       .agent_rpc
-      .task_revoke(&site_id, &agent.ip_address)
+      .task_revoke(site_id, &agent.ip_address)
       .await?;
   }
   Ok(Value::Null)

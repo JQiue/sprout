@@ -1,8 +1,13 @@
 pub mod error;
 
+use core::panic;
 use std::fmt::Debug;
 use std::{path::PathBuf, time::Duration};
 
+use common::agent::{
+  HeartbeatResponse, InitUploadRequest, InitUploadResponse, TaskPublishRequest, TaskRevokeRequest,
+};
+use common::master::AssignTaskRequest;
 use log::{error, trace};
 use reqwest::multipart::{Form, Part};
 use serde::{Deserialize, Serialize};
@@ -23,15 +28,6 @@ pub struct InitUploadData {
   pub upload_token: String,
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct AgentHeartbeat {
-  pub cpu_cores: i8,
-  pub cpu_usage: f32,
-  pub total_memory: i32,
-  pub free_memory: i32,
-  pub memory_usage: f32,
-}
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TaskPublishData {
   pub preview_url: String,
@@ -49,14 +45,14 @@ impl AgentRpc {
     }
   }
 
-  pub async fn get_agent_heartbeat(&self, agent_ip: &str) -> Result<AgentHeartbeat, AppError> {
+  pub async fn get_agent_heartbeat(&self, agent_ip: &str) -> Result<HeartbeatResponse, AppError> {
     let resp = self
       .api_client
       .get(format!("http://{agent_ip}:5001/api/heartbeat"))
       .timeout(Duration::from_secs(3))
       .send()
       .await?;
-    let data = resp.json::<RpcResponse<AgentHeartbeat>>().await?;
+    let data = resp.json::<RpcResponse<HeartbeatResponse>>().await?;
     if data.code != 0 {
       error!("{}", data.msg);
       Err(AppError::RpcCallError)
@@ -68,25 +64,21 @@ impl AgentRpc {
   pub async fn init_upload_session(
     &self,
     agent_ip: &str,
-    site_id: &str,
-    deploy_id: u32,
-  ) -> Result<InitUploadData, AppError> {
+    site_id: String,
+  ) -> Result<InitUploadResponse, AppError> {
     let resp = self
       .api_client
       .post(format!("http://{}:5001/api/upload/init", agent_ip))
       .timeout(Duration::from_secs(3))
-      .json(&json!({
-        "site_id": site_id,
-        "deploy_id": deploy_id
-      }))
+      .json(&InitUploadRequest { site_id })
       .send()
       .await?;
-    let data = resp.json::<RpcResponse<InitUploadData>>().await?;
-    if data.code != 0 {
+    let data = resp.json::<RpcResponse<InitUploadResponse>>().await?;
+    if data.code == 0 {
+      Ok(data.data.unwrap())
+    } else {
       error!("{}", data.msg);
       Err(AppError::RpcCallError)
-    } else {
-      Ok(data.data.unwrap())
     }
   }
 
@@ -131,26 +123,27 @@ impl AgentRpc {
 
   pub async fn task_publish(
     &self,
-    site_id: &str,
+    site_id: String,
     deployment_id: u32,
-    ip_address: &str,
-    bandwidth: &str,
-    preview_url: &str,
+    ip_address: String,
+    bandwidth: String,
+    bind_domain: Option<String>,
+    preview_domain: String,
   ) -> Result<bool, AppError> {
     let resp = self
       .api_client
       .post(format!("http://{}:5001/api/task/publish", ip_address))
-      .timeout(Duration::from_secs(3))
-      .json(&json!({
-        "site_id": site_id,
-        "deployment_id": deployment_id,
-        "bandwidth": bandwidth,
-        "preview_url": preview_url
-      }))
+      .timeout(Duration::from_secs(10))
+      .json(&TaskPublishRequest {
+        site_id,
+        deployment_id,
+        bandwidth,
+        bind_domain,
+        preview_domain,
+      })
       .send()
-      .await
-      .unwrap();
-    let data = resp.json::<RpcResponse<TaskPublishData>>().await.unwrap();
+      .await?;
+    let data = resp.json::<RpcResponse<()>>().await.unwrap();
     if data.code == 0 {
       Ok(true)
     } else {
@@ -159,21 +152,19 @@ impl AgentRpc {
     }
   }
 
-  pub async fn task_revoke(&self, site_id: &str, ip_address: &str) -> Result<bool, AppError> {
+  pub async fn task_revoke(&self, site_id: String, ip_address: &str) -> Result<bool, AppError> {
     let resp = self
       .api_client
       .post(format!("http://{}:5001/api/task/revoke", ip_address))
-      .json(&json!({
-        "site_id": site_id,
-      }))
+      .json(&TaskRevokeRequest { site_id })
       .send()
       .await?;
     let data = resp.json::<RpcResponse<()>>().await.unwrap();
-    if data.code != 0 {
+    if data.code == 0 {
+      Ok(true)
+    } else {
       trace!("{}", data.msg);
       Ok(false)
-    } else {
-      Ok(true)
     }
   }
 }
@@ -285,8 +276,12 @@ impl MasterRpc {
       .await
       .unwrap();
     let data = resp.json::<RpcResponse<CreateSiteData>>().await.unwrap();
-    trace!("{:?}", data);
-    data.data.unwrap()
+    if data.code == 0 {
+      trace!("{:?}", data);
+      data.data.unwrap()
+    } else {
+      panic!("{}", data.msg);
+    }
   }
 
   pub async fn create_deployment(&self, site_id: &str, token: &str) -> CreateDeploymentData {
@@ -304,8 +299,12 @@ impl MasterRpc {
       .json::<RpcResponse<CreateDeploymentData>>()
       .await
       .unwrap();
-    trace!("{:?}", data);
-    data.data.unwrap()
+    if data.code == 0 {
+      trace!("{:?}", data);
+      data.data.unwrap()
+    } else {
+      panic!("{}", data.msg);
+    }
   }
 
   pub async fn update_deployment_status(
@@ -332,18 +331,18 @@ impl MasterRpc {
   pub async fn publish_site(
     &self,
     token: &str,
-    site_id: &str,
+    site_id: String,
     deployment_id: u32,
   ) -> AssignTaskData {
     let resp = self
       .api_client
       .post(format!("{}/api/agent/task", self.master_url))
       .bearer_auth(token)
-      .json(&json!({
-        "type": "publish",
-        "site_id": site_id,
-        "deployment_id": deployment_id,
-      }))
+      .json(&AssignTaskRequest {
+        r#type: "publish".to_string(),
+        site_id,
+        deployment_id,
+      })
       .send()
       .await
       .unwrap();
@@ -404,8 +403,9 @@ impl CloudflareRpc {
         content: dns::DnsContent::A { content: ip },
       },
     };
-    let response = self.api_client.request(&endpoint).await.unwrap();
-    println!("{:#?}", response);
+    if let Ok(resp) = self.api_client.request(&endpoint).await {
+      println!("{:#?}", resp);
+    }
   }
 
   pub async fn create_cname_record(&self, name: &str, content: String) {

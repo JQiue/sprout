@@ -2,6 +2,7 @@ use actix_web::{
   HttpResponse, get, post,
   web::{Data, Json, ReqData},
 };
+use common::master::UserLoginReqeust;
 
 use crate::{
   app::AppState,
@@ -39,10 +40,9 @@ pub async fn user_register(
 #[post("/user/token")]
 pub async fn user_login(
   state: Data<AppState>,
-  body: Json<UserLoginBody>,
+  body: Json<UserLoginReqeust>,
 ) -> Result<HttpResponse, AppError> {
-  let Json(UserLoginBody { email, password }) = body;
-  match service::user_login(&state, email, password).await {
+  match service::user_login(&state, body.0.email, body.0.password).await {
     Ok(data) => Response::success(Some(data)),
     Err(err) => Response::<()>::error(err),
   }

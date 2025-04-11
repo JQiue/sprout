@@ -1,12 +1,15 @@
 use actix_web::{
-  HttpResponse, get, post,
+  HttpRequest, HttpResponse, get, post,
   web::{Data, Json, Path},
 };
 
 use crate::{
   app::AppState,
-  components::deployment::model::{CreateDeploymentBody, UpdateDeploymentStatusBody},
+  components::deployment::model::{
+    CreateDeploymentBody, UpdateDeploymentRequest, UpdateDeploymentStatusBody,
+  },
   error::AppError,
+  helper::extract_token,
   response::Response,
 };
 
@@ -24,11 +27,25 @@ pub async fn create_deployment(
 }
 
 #[get("/deployment/{deployment_id}")]
-pub async fn get_deployment_info(
+pub async fn get_deployment(
   state: Data<AppState>,
   deployment_id: Path<u32>,
 ) -> Result<HttpResponse, AppError> {
   match service::get_deployment_info(&state, deployment_id.into_inner()).await {
+    Ok(data) => Response::success(Some(data)),
+    Err(err) => Response::<()>::error(err),
+  }
+}
+
+#[post("/deployment")]
+pub async fn update_deployment(
+  state: Data<AppState>,
+  req: HttpRequest,
+  body: Json<UpdateDeploymentRequest>,
+) -> Result<HttpResponse, AppError> {
+  let token = extract_token(&req)?;
+
+  match service::update_deployment(&state, token, body.0.deployment_id, body.0.status).await {
     Ok(data) => Response::success(Some(data)),
     Err(err) => Response::<()>::error(err),
   }

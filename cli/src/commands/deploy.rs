@@ -131,7 +131,7 @@ async fn deploy_project(path: String) -> String {
         )
         .await;
       let assign_task_data = master_rpc
-        .publish_site(&token, &site_id, deploy_data.deployment_id)
+        .publish_site(&token, site_id, deploy_data.deployment_id)
         .await;
       assign_task_data.preview_url
     } else {
@@ -152,7 +152,7 @@ async fn deploy_project(path: String) -> String {
         )
         .await;
       let assign_task_data = master_rpc
-        .publish_site(&token, &create_site_data.site_id, deploy_data.deployment_id)
+        .publish_site(&token, create_site_data.site_id, deploy_data.deployment_id)
         .await;
       assign_task_data.preview_url
     }
@@ -176,7 +176,7 @@ async fn deploy_project(path: String) -> String {
       )
       .await;
     let assign_task_data = master_rpc
-      .publish_site(&token, &create_site_data.site_id, deploy_data.deployment_id)
+      .publish_site(&token, create_site_data.site_id, deploy_data.deployment_id)
       .await;
     assign_task_data.preview_url
   }

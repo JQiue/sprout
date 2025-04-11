@@ -2,6 +2,7 @@ use actix_web::{
   HttpRequest, HttpResponse, get, post,
   web::{Data, Json, Path, ReqData},
 };
+use common::master::AssignTaskRequest;
 use helpers::jwt;
 
 use crate::{
@@ -70,7 +71,7 @@ pub async fn refresh_agent_token(
 #[post("/agent/task")]
 pub async fn assign_task(
   state: Data<AppState>,
-  body: Json<AssignTaskBody>,
+  body: Json<AssignTaskRequest>,
 ) -> Result<HttpResponse, AppError> {
   match service::assign_task(&state, body.0.r#type, body.0.site_id, body.0.deployment_id).await {
     Ok(data) => Response::success(Some(data)),

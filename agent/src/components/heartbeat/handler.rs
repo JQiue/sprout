@@ -1,10 +1,10 @@
-use actix_web::{HttpResponse, get, web::Data};
+use actix_web::{HttpResponse, get};
 
-use crate::{app::AppState, components::heartbeat::service, error::AppError, response::Response};
+use crate::{components::heartbeat::service, error::AppError, response::Response};
 
 #[get("/heartbeat")]
-pub async fn heartbeat(state: Data<AppState>) -> Result<HttpResponse, AppError> {
-  match service::heartbeat(&state).await {
+pub async fn heartbeat() -> Result<HttpResponse, AppError> {
+  match service::heartbeat().await {
     Ok(data) => Response::success(Some(data)),
     Err(err) => Response::<()>::error(err),
   }

@@ -1,7 +1,7 @@
 use actix_web::web::ServiceConfig;
 
 mod handler;
-mod model;
+pub mod model;
 mod service;
 pub struct DeploymentComponent;
 

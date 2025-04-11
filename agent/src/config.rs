@@ -28,8 +28,6 @@ pub struct Config {
   pub host: String,
   #[serde(default = "default_port")]
   pub port: u16,
-  pub agent_token: String,
-  pub master_url: String,
   #[serde(default = "default_nginx_config_path")]
   pub nginx_config_path: String,
   pub storage_path: String,

@@ -27,7 +27,7 @@ pub async fn create_deployment(state: &AppState, site_id: String) -> Result<Valu
       })
       .await?;
     let init_response = rpc::AgentRpc::new()
-      .init_upload_session(&agent.ip_address, &deployment.site_id, deployment.id)
+      .init_upload_session(&agent.ip_address, deployment.site_id.clone())
       .await?;
     let mut active_deployment = deployment.into_active_model();
     active_deployment.status = Set(DeploymentStatus::Uploading);
@@ -63,6 +63,26 @@ pub async fn get_deployment_info(state: &AppState, deployment_id: u32) -> Result
   } else {
     Err(AppError::DeploymentNotFound)
   }
+}
+
+pub async fn update_deployment(
+  state: &AppState,
+  token: String,
+  deployment_id: u32,
+  status: DeploymentStatus,
+) -> Result<Value, AppError> {
+  jwt::verify::<String>(&token, &state.login_token_key)?;
+  state
+    .repo
+    .deployment()
+    .update_deployment(deployment::ActiveModel {
+      id: Set(deployment_id),
+      status: Set(status),
+      execution_time: Set(utc_now()),
+      ..Default::default()
+    })
+    .await?;
+  Ok(json!(()))
 }
 
 pub async fn update_deployment_status(

@@ -43,4 +43,10 @@ pub async fn login() {
   let mut cli_config = get_cli_config();
   cli_config.token = Some(token);
   set_cli_config(cli_config);
+  term
+    .write_line(&format!(
+      "{}",
+      green_style.apply_to("Login successful! You can now use the CLI.")
+    ))
+    .unwrap();
 }

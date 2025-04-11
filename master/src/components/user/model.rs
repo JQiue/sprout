@@ -8,12 +8,6 @@ pub struct UserRegisterBody {
 }
 
 #[derive(Deserialize)]
-pub struct UserLoginBody {
-  pub email: String,
-  pub password: String,
-}
-
-#[derive(Deserialize)]
 pub struct SetUserPasswordBody {
   pub password: String,
 }

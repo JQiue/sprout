@@ -7,10 +7,6 @@ use std::{
 };
 use tracing::{debug, error, info, trace};
 
-pub fn generate_domian(site_id: &str) -> String {
-  format!("{site_id}.is.me")
-}
-
 pub fn extract_tar(filename: String, output: String) -> bool {
   let mut child = Command::new("tar")
     .arg("-xf")
@@ -61,11 +57,11 @@ impl NginxConfig {
     }
   }
 
-  pub fn generate_config(&self, domain: &str, root_path: &str, bandwidth: &str) -> String {
+  pub fn generate_config(&self, server_name: &str, root_path: &str, bandwidth: &str) -> String {
     let mut config = String::new();
     config.push_str("server {\n");
     config.push_str("    listen 80;\n");
-    config.push_str(&format!("    server_name {};\n", domain));
+    config.push_str(&format!("    server_name {};\n", server_name));
     config.push_str("    location / {\n");
     config.push_str("        try_files $uri $uri/ /index.html;\n");
     config.push_str(&format!("        root {};\n", root_path));
@@ -88,9 +84,9 @@ impl NginxConfig {
     }
   }
 
-  pub fn deploy(&self, domain: &str, root_path: &str, bandwidth: &str, site_id: &str) -> bool {
+  pub fn deploy(&self, server_name: &str, root_path: &str, bandwidth: &str, site_id: &str) -> bool {
     // 生成配置文件内容
-    let config_content = self.generate_config(domain, root_path, bandwidth);
+    let config_content = self.generate_config(server_name, root_path, bandwidth);
 
     // 暂时简单写入，以后替换为原子写入
     if let Err(e) = fs::create_dir_all(self.config_path.as_path()) {
