@@ -66,10 +66,11 @@ pub async fn publish_site(
   };
 
   debug!("nginx_root_path: {:?}", nginx_root_path);
-  let nginx_config = NginxConfig::new(&state.nginx_config_path, false);
+  let mut nginx_config = NginxConfig::new(&state.nginx_config_path, false);
   let server_name = if let Some(bind_domain) = bind_domain {
-    let is = check_dns_record(&bind_domain, state.public_ip)?;
-    println!("CNAME: {:?}", is);
+    if check_dns_record(&bind_domain, state.public_ip)? {
+      nginx_config.ssl_enabled = true;
+    }
     [bind_domain, preview_domain].join(" ")
   } else {
     preview_domain

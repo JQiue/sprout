@@ -49,7 +49,7 @@ pub fn extract_tar(filename: String, output: String) -> bool {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct NginxConfig {
   config_path: PathBuf,
-  ssl_enabled: bool,
+  pub ssl_enabled: bool,
 }
 
 impl NginxConfig {
@@ -130,7 +130,9 @@ impl NginxConfig {
     true
   }
 
-  pub fn apply_ssl(&self) {}
+  pub fn apply_ssl(&self) {
+    println!("Applying SSL configuration...");
+  }
 }
 
 pub fn check_dns_record(domian: &str, ip: IpAddr) -> Result<bool, AppError> {
