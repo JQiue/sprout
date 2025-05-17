@@ -115,7 +115,12 @@ impl NginxConfig {
         .map(|s| s.to_string())
         .collect::<Vec<String>>();
       println!("{:?}", split);
-      self.apply_ssl(server_name);
+      let domain = if split.len() == 2 {
+        split[0].clone()
+      } else {
+        split[0].clone()
+      };
+      self.apply_ssl(&domain);
     }
     // 测试配置是否正确
     if Command::new("nginx").arg("-t").status().is_err() {
@@ -135,9 +140,14 @@ impl NginxConfig {
     true
   }
 
-  pub fn apply_ssl(&self, domian: &str) {
+  pub fn apply_ssl(&self, domain: &str) {
     println!("Applying SSL configuration...");
-    Command::new("certbot").arg("--nginx").arg("-d").arg(domian);
+    let c = Command::new("certbot")
+      .arg("--nginx")
+      .arg("-d")
+      .arg(domain)
+      .spawn()
+      .unwrap();
   }
 }
 
