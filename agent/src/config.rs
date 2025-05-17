@@ -1,5 +1,7 @@
 //! config
 
+use std::net::IpAddr;
+
 use serde::Deserialize;
 
 use crate::error::AppError;
@@ -33,6 +35,7 @@ pub struct Config {
   pub storage_path: String,
   pub upload_token_key: String,
   pub upload_token_key_expire: i64,
+  pub public_ip: IpAddr,
 }
 
 impl Config {

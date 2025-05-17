@@ -1,11 +1,15 @@
+use std::net::IpAddr;
+
 use actix_cors::Cors;
 use actix_web::{
-  App, HttpResponse, HttpServer, middleware,
+  App, HttpServer, middleware,
   web::{self, ServiceConfig},
 };
 
 use crate::{
-  components::{deployment::DeploymentComponent, heartbeat::HeartbeatComponent},
+  components::{
+    base::health_check, deployment::DeploymentComponent, heartbeat::HeartbeatComponent,
+  },
   config::Config,
   error::AppError,
 };
@@ -16,10 +20,7 @@ pub struct AppState {
   pub nginx_config_path: String,
   pub upload_token_key: String,
   pub upload_token_key_expire: i64,
-}
-
-async fn health_check() -> HttpResponse {
-  HttpResponse::Ok().json(serde_json::json!({"status": "OK"}))
+  pub public_ip: IpAddr,
 }
 
 pub fn config_app(cfg: &mut ServiceConfig) {
@@ -40,6 +41,7 @@ pub async fn start() -> Result<(), AppError> {
     nginx_config_path,
     upload_token_key,
     upload_token_key_expire,
+    public_ip,
     ..
   } = Config::from_env()?;
   let state = AppState {
@@ -47,6 +49,7 @@ pub async fn start() -> Result<(), AppError> {
     nginx_config_path,
     upload_token_key,
     upload_token_key_expire,
+    public_ip,
   };
   Ok(
     HttpServer::new(move || {

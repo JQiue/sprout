@@ -7,7 +7,7 @@ use tracing::debug;
 use crate::{
   app::AppState,
   error::AppError,
-  helper::{NginxConfig, extract_tar},
+  helper::{NginxConfig, check_dns_record, extract_tar},
   types::ServiceResult,
 };
 use helpers::{self, jwt};
@@ -68,6 +68,8 @@ pub async fn publish_site(
   debug!("nginx_root_path: {:?}", nginx_root_path);
   let nginx_config = NginxConfig::new(&state.nginx_config_path, false);
   let server_name = if let Some(bind_domain) = bind_domain {
+    let is = check_dns_record(&bind_domain, state.public_ip)?;
+    println!("CNAME: {:?}", is);
     [bind_domain, preview_domain].join(" ")
   } else {
     preview_domain
@@ -99,6 +101,7 @@ mod tests {
       storage_path: "./".to_string(),
       upload_token_key: "efkalwfewalkf".to_string(),
       upload_token_key_expire: 1000,
+      public_ip: "192.168.5.12".parse().unwrap(),
     };
 
     match init_upload(&state, "alfjalfafj".to_string()).await {
