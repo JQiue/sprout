@@ -110,7 +110,9 @@ impl NginxConfig {
     }
 
     if self.ssl_enabled {
-      self.apply_ssl();
+      let split = server_name.split(" ").map(|s| s.to_string()).collect::<Vec<String>>();
+      println!("{:?}", split);
+      self.apply_ssl(server_name);
     }
     // 测试配置是否正确
     if Command::new("nginx").arg("-t").status().is_err() {
@@ -130,8 +132,9 @@ impl NginxConfig {
     true
   }
 
-  pub fn apply_ssl(&self) {
+  pub fn apply_ssl(&self, domian: &str) {
     println!("Applying SSL configuration...");
+    Command::new("certbot").arg("--nginx").arg("-d").arg(self.)
   }
 }
 
