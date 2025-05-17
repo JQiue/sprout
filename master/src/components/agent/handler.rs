@@ -11,7 +11,7 @@ use crate::{
   error::AppError,
   helper::extract_token,
   middlewares::JwtPayload,
-  response::Response,
+  traits::IntoHttpResponse,
 };
 
 #[post("/agent")]
@@ -29,7 +29,7 @@ pub async fn register_agent(
     storage_path,
     available_space,
   }) = body;
-  match service::register_agent(
+  service::register_agent(
     &state,
     user_id,
     hostname,
@@ -38,10 +38,7 @@ pub async fn register_agent(
     available_space,
   )
   .await
-  {
-    Ok(data) => Response::success(Some(data)),
-    Err(err) => Response::<()>::error(err),
-  }
+  .into_http_response()
 }
 
 #[get("/agent/{agent_id}")]
@@ -49,10 +46,9 @@ pub async fn get_agent_status(
   state: Data<AppState>,
   agent_id: Path<u32>,
 ) -> Result<HttpResponse, AppError> {
-  match service::get_agent_status(&state, agent_id.into_inner()).await {
-    Ok(data) => Response::success(Some(data)),
-    Err(err) => Response::<()>::error(err),
-  }
+  service::get_agent_status(&state, agent_id.into_inner())
+    .await
+    .into_http_response()
 }
 
 #[post("/agent/{agent_id}/token")]
@@ -61,11 +57,9 @@ pub async fn refresh_agent_token(
   req_data: ReqData<JwtPayload>,
   agent_id: Path<u32>,
 ) -> Result<HttpResponse, AppError> {
-  match service::refresh_agent_token(&state, req_data.user_id.clone(), agent_id.into_inner()).await
-  {
-    Ok(data) => Response::success(Some(data)),
-    Err(err) => Response::<()>::error(err),
-  }
+  service::refresh_agent_token(&state, req_data.user_id.clone(), agent_id.into_inner())
+    .await
+    .into_http_response()
 }
 
 #[post("/agent/task")]
@@ -73,8 +67,13 @@ pub async fn assign_task(
   state: Data<AppState>,
   body: Json<AssignTaskRequest>,
 ) -> Result<HttpResponse, AppError> {
-  match service::assign_task(&state, body.0.r#type, body.0.site_id, body.0.deployment_id).await {
-    Ok(data) => Response::success(Some(data)),
-    Err(err) => Response::<()>::error(err),
-  }
+  service::assign_task(
+    &state,
+    body.0.r#type,
+    body.0.site_id,
+    body.0.deployment_id,
+    body.0.bind_domain,
+  )
+  .await
+  .into_http_response()
 }

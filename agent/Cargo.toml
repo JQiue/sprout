@@ -19,6 +19,8 @@ tracing-subscriber = { workspace = true, features = [
   "local-time",
 ] }
 sysinfo = { workspace = true }
+dns-lookup = { workspace = true }
+thiserror = { workspace = true }
 
 [dev-dependencies]
 mockall = { workspace = true }

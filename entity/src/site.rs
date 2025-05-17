@@ -15,6 +15,15 @@ pub enum SiteStatus {
   Disabled,
 }
 
+impl SiteStatus {
+  pub fn to_string(&self) -> String {
+    match self {
+      SiteStatus::Active => "active".to_string(),
+      SiteStatus::Disabled => "disabled".to_string(),
+    }
+  }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
 #[sea_orm(rs_type = "u32", db_type = "Integer")]
 #[serde(rename_all = "lowercase")]
@@ -38,7 +47,7 @@ impl Bandwidth {
   }
 }
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
+#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "site")]
 pub struct Model {
   #[sea_orm(primary_key)]

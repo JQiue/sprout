@@ -9,5 +9,6 @@ pub struct SiteComponent;
 impl SiteComponent {
   pub fn config(cfg: &mut ServiceConfig) {
     cfg.service(handler::create_site);
+    cfg.service(handler::get_sites);
   }
 }

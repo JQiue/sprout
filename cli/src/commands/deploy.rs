@@ -4,42 +4,34 @@ use std::{
   panic,
   path::Path,
   process::{Command, Stdio},
-  time::Duration,
 };
+
+use clap::Parser;
+use console::style;
+use tracing::{debug, trace};
 
 use crate::{
   Cli, MASTER_URL,
+  error::Error,
   helper::{
-    audit_directory, get_cli_config, get_project_config, load_keywords_from_embedded,
+    Process, audit_directory, get_cli_config, get_project_config, load_keywords_from_embedded,
     set_project_config, tar_directory,
   },
 };
-use clap::Parser;
-use console::{Emoji, style};
-use indicatif::{ProgressBar, ProgressStyle};
-use log::trace;
 
-static LOOKING_GLASS: Emoji<'_, '_> = Emoji("🔍  ", "");
-
-fn is_login() -> bool {
-  let cli_config = get_cli_config();
-  cli_config.token.is_some()
-}
+// static LOOKING_GLASS: Emoji<'_, '_> = Emoji("🔍  ", "");
 
 fn audit_project(path: String) {
   let path = Path::new(&path);
   if !path.exists() {
     panic!("Path does not exist: {:?}", path);
   }
-  let keywords = load_keywords_from_embedded(&[
-    "./涉枪涉爆违法信息关键词.txt",
-    "./色情类.txt",
-    "./政治类.txt",
-  ]);
-  let necative_keywords = load_keywords_from_embedded(&["./否定关键词.txt"]);
+  let keywords =
+    load_keywords_from_embedded(&["涉枪涉爆违法信息关键词.txt", "色情类.txt", "政治类.txt"]);
+  let necative_keywords = load_keywords_from_embedded(&["否定关键词.txt"]);
   let res = audit_directory(path, &keywords, &necative_keywords).expect("Cannot audit directory");
   if !res.is_empty() {
-    trace!("{:?}", res);
+    debug!("{:?}", res);
     panic!("Audit failed")
   }
 }
@@ -51,9 +43,8 @@ pub enum ProjectType {
   Unknown,
 }
 
-pub fn get_project_type() -> ProjectType {
-  let cli = Cli::parse();
-  if cli.target.is_some() {
+pub fn get_project_type(target: Option<String>) -> ProjectType {
+  if target.is_some() {
     return ProjectType::Custom;
   }
   if let Ok(content) = fs::read("./package.json") {
@@ -66,11 +57,14 @@ pub fn get_project_type() -> ProjectType {
   ProjectType::Unknown
 }
 
-pub fn build_project(project_type: ProjectType) -> String {
-  let cli = Cli::parse();
+pub fn build_project(
+  project_type: ProjectType,
+  target: Option<String>,
+  skip_build: bool,
+) -> String {
   match project_type {
     ProjectType::Vuepress => {
-      if cli.skip_build {
+      if skip_build {
         return "./docs/.vuepress/dist".to_string();
       }
       let mut child = Command::new("npm.cmd")
@@ -105,127 +99,146 @@ pub fn build_project(project_type: ProjectType) -> String {
       "./docs/.vuepress/dist".to_string()
     }
     ProjectType::Custom => {
-      let path = cli.target.clone().unwrap() + "/index.html";
+      let path = target.clone().unwrap() + "/index.html";
       if !Path::new(&path).exists() {
-        panic!("not found index.html")
+        panic!("Not found index.html")
       }
-      cli.target.unwrap()
+      target.unwrap()
     }
     ProjectType::Unknown => panic!("Unknown project type"),
   }
 }
 
-async fn deploy_project(path: String) -> String {
-  let master_rpc = rpc::MasterRpc::new(MASTER_URL.to_string());
-  let agent_rpc = rpc::AgentRpc::new();
+async fn deploy_project(path: String) -> Result<(String, Option<String>), Error> {
+  let cli = Cli::parse();
+  let bind_domain = if let Some(domain) = cli.bind_domain {
+    let mut pc = get_project_config();
+    pc.bind_domain = Some(domain.clone());
+    set_project_config(pc);
+    Some(domain)
+  } else {
+    get_project_config().bind_domain
+  };
+  let master_rpc = rpc::MasterRpc::new(MASTER_URL.to_string())?;
+  let agent_rpc = rpc::AgentRpc::new()?;
   if let Some(token) = get_cli_config().token {
     if let Some(site_id) = get_project_config().site_id {
       let path = tar_directory(path.clone(), &site_id);
-      let deploy_data = master_rpc.create_deployment(&site_id, &token).await;
-      let _ = agent_rpc
+      let deploy_data = master_rpc
+        .create_deployment(site_id.clone(), &token)
+        .await?;
+      agent_rpc
         .upload_file(
-          deploy_data.deploy_url,
+          &deploy_data.deploy_url,
           deploy_data.deploy_token,
           deploy_data.deployment_id,
           path,
         )
-        .await;
+        .await?;
       let assign_task_data = master_rpc
-        .publish_site(&token, site_id, deploy_data.deployment_id)
-        .await;
-      assign_task_data.preview_url
+        .publish_site(&token, site_id, deploy_data.deployment_id, bind_domain)
+        .await?;
+      Ok((
+        assign_task_data.preview_url,
+        get_project_config().bind_domain,
+      ))
     } else {
-      let create_site_data = master_rpc.create_site(&token).await;
+      let create_site_data = master_rpc.create_site(&token).await?;
       let mut project_config = get_project_config();
       project_config.site_id = Some(create_site_data.site_id.clone());
       set_project_config(project_config);
       let path = tar_directory(path.clone(), &create_site_data.site_id);
       let deploy_data = master_rpc
-        .create_deployment(&create_site_data.site_id, &token)
-        .await;
-      let _ = agent_rpc
+        .create_deployment(create_site_data.site_id.clone(), &token)
+        .await?;
+      agent_rpc
         .upload_file(
-          deploy_data.deploy_url,
+          &deploy_data.deploy_url,
           deploy_data.deploy_token,
           deploy_data.deployment_id,
           path,
         )
-        .await;
+        .await?;
       let assign_task_data = master_rpc
-        .publish_site(&token, create_site_data.site_id, deploy_data.deployment_id)
-        .await;
-      assign_task_data.preview_url
+        .publish_site(
+          &token,
+          create_site_data.site_id,
+          deploy_data.deployment_id,
+          bind_domain,
+        )
+        .await?;
+      Ok((
+        assign_task_data.preview_url,
+        get_project_config().bind_domain,
+      ))
     }
   } else {
-    let token = master_rpc.get_casual_token().await;
-    let create_site_data = master_rpc.create_site(&token).await;
+    let get_casual_token_data = master_rpc.get_casual_token().await?;
+    let create_site_data = master_rpc.create_site(&get_casual_token_data.token).await?;
     let mut project_config = get_project_config();
     project_config.site_id = Some(create_site_data.site_id.clone());
     set_project_config(project_config);
     let path = tar_directory(path.clone(), &create_site_data.site_id);
     trace!("{:?}", create_site_data);
     let deploy_data = master_rpc
-      .create_deployment(&create_site_data.site_id, &token)
-      .await;
+      .create_deployment(
+        create_site_data.site_id.clone(),
+        &get_casual_token_data.token,
+      )
+      .await?;
+    let agent_rpc = rpc::AgentRpc::new()?;
     let _ = agent_rpc
       .upload_file(
-        deploy_data.deploy_url,
+        &deploy_data.deploy_url,
         deploy_data.deploy_token,
         deploy_data.deployment_id,
         path,
       )
       .await;
     let assign_task_data = master_rpc
-      .publish_site(&token, create_site_data.site_id, deploy_data.deployment_id)
-      .await;
-    assign_task_data.preview_url
+      .publish_site(
+        &get_casual_token_data.token,
+        create_site_data.site_id,
+        deploy_data.deployment_id,
+        None,
+      )
+      .await?;
+    Ok((assign_task_data.preview_url, None))
   }
 }
 
-pub async fn deploy() {
-  let pb = ProgressBar::new_spinner();
-  pb.enable_steady_tick(Duration::from_millis(120));
-  pb.set_style(
-    ProgressStyle::with_template("{spinner:.blue} {msg}")
-      .unwrap()
-      .tick_strings(&["▹▹▹▹▹", "▸▹▹▹▹", "▹▸▹▹▹", "▹▹▸▹▹", "▹▹▹▸▹", "▹▹▹▹▸", "🎉"]),
-  );
-  pb.set_message(format!(
+pub async fn deploy(target: Option<String>, skip_build: bool) -> Result<(), Error> {
+  let pb1 = Process::new(&format!(
     "{} Get project type...",
-    style("[1/4]").bold().dim(),
+    style("[1/4]").bold().dim()
   ));
-  let project_type = get_project_type();
-  println!("{:?}", project_type);
-  pb.set_message(format!(
-    "{} {}Build project...",
-    style("[2/4]").bold().dim(),
-    LOOKING_GLASS
-  ));
-  let path = build_project(project_type);
-  println!("{:?}", path);
-  pb.set_message(format!(
-    "{} {}Content review...",
-    style("[3/4]").bold().dim(),
-    LOOKING_GLASS
+  let project_type = get_project_type(target.clone());
+  pb1.finish(None);
+
+  let pb2 = Process::new(&format!("{} Build project...", style("[2/4]").bold().dim()));
+  let path = build_project(project_type, target, skip_build);
+  pb2.finish(None);
+
+  let pb3 = Process::new(&format!(
+    "{} Content review...",
+    style("[3/4]").bold().dim()
   ));
   audit_project(path.clone());
-  println!("Review success");
-  pb.set_message(format!(
-    "{} {}Deploy site...",
-    style("[4/4]").bold().dim(),
-    LOOKING_GLASS
-  ));
-  let domian = deploy_project(path).await;
-  println!("Deploy success!");
-  if is_login() {
-    pb.finish_with_message(format!(
-      "Preview url: {}, Please use click to preview the site",
-      style(domian).cyan(),
-    ));
+  pb3.finish(None);
+
+  let pb4 = Process::new(&format!("{} Deploy site...", style("[4/4]").bold().dim()));
+  let (preview_url, bind_url) = deploy_project(path).await?;
+  pb4.finish(None);
+
+  let finish_msg = if let Some(bind_url) = bind_url {
+    format!(
+      "Your url: {}, Preview url: {}",
+      style("https://".to_string() + &bind_url).green(),
+      style(preview_url).green()
+    )
   } else {
-    pb.finish_with_message(format!(
-      "Preview url: {}, Please use click to preview the site",
-      style(domian).cyan(),
-    ));
-  }
+    format!("Preview url: {}", style(preview_url).cyan())
+  };
+  println!("{finish_msg}",);
+  Ok(())
 }

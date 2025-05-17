@@ -2,21 +2,19 @@ use std::{fs, path::Path};
 
 use common::agent::InitUploadResponse;
 use serde_json::Value;
-use tracing::{debug, error};
+use tracing::debug;
 
 use crate::{
   app::AppState,
   error::AppError,
   helper::{NginxConfig, extract_tar},
+  types::ServiceResult,
 };
 use helpers::{self, jwt};
 
 use super::model::UploadForm;
 
-pub async fn init_upload(
-  state: &AppState,
-  site_id: String,
-) -> Result<InitUploadResponse, AppError> {
+pub async fn init_upload(state: &AppState, site_id: String) -> ServiceResult<InitUploadResponse> {
   let upload_token = jwt::sign(
     site_id,
     &state.upload_token_key,
@@ -25,7 +23,7 @@ pub async fn init_upload(
   Ok(InitUploadResponse { upload_token })
 }
 
-pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, AppError> {
+pub async fn file_upload(state: &AppState, form: UploadForm) -> ServiceResult<Value> {
   jwt::verify::<String>(&form.upload_token, &state.upload_token_key)?;
   let base_dir = Path::new(&state.storage_path);
 
@@ -34,7 +32,10 @@ pub async fn file_upload(state: &AppState, form: UploadForm) -> Result<Value, Ap
   }
 
   for tempfile in form.dist.iter() {
-    let filename = tempfile.file_name.clone().unwrap();
+    let filename = tempfile
+      .file_name
+      .clone()
+      .ok_or(AppError::TempfileNotFound)?;
     let target_path = base_dir.join(filename);
     fs::copy(tempfile.file.path(), target_path)?;
   }
@@ -48,7 +49,7 @@ pub async fn publish_site(
   bandwidth: String,
   bind_domain: Option<String>,
   preview_domain: String,
-) -> Result<Value, AppError> {
+) -> ServiceResult<Value> {
   let base_dir = Path::new(&state.storage_path);
 
   if !base_dir.exists() {
@@ -61,7 +62,7 @@ pub async fn publish_site(
     nginx_root_path.clone() + ".tar",
     base_dir.canonicalize()?.to_string_lossy().to_string(),
   ) {
-    return Err(AppError::Error);
+    return Err(AppError::ExtractTar);
   };
 
   debug!("nginx_root_path: {:?}", nginx_root_path);
@@ -75,15 +76,13 @@ pub async fn publish_site(
   if nginx_config.deploy(&server_name, &nginx_root_path, &bandwidth, &site_id) {
     Ok(Value::Null)
   } else {
-    Err(AppError::Error)
+    Err(AppError::NginxDeploy)
   }
 }
 
-pub async fn revoke_site(state: &AppState, site_id: String) -> Result<Value, AppError> {
+pub async fn revoke_site(state: &AppState, site_id: String) -> ServiceResult<Value> {
   let base_dir = Path::new(&state.storage_path);
-  fs::remove_dir_all(base_dir.join(&site_id)).unwrap_or_else(|_| {
-    error!("Failed to remove directory: {}", site_id);
-  });
+  fs::remove_dir_all(base_dir.join(&site_id))?;
   let nc = NginxConfig::new(&state.nginx_config_path, false);
   nc.remove_config(&site_id)?;
   Ok(Value::Null)

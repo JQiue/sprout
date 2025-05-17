@@ -2,10 +2,13 @@ use serde::{Deserialize, Serialize};
 use std::{
   fs,
   io::{BufRead, BufReader},
+  net::IpAddr,
   path::PathBuf,
   process::{Command, Stdio},
 };
 use tracing::{debug, error, info, trace};
+
+use crate::error::AppError;
 
 pub fn extract_tar(filename: String, output: String) -> bool {
   let mut child = Command::new("tar")
@@ -109,7 +112,6 @@ impl NginxConfig {
     if self.ssl_enabled {
       self.apply_ssl();
     }
-
     // 测试配置是否正确
     if Command::new("nginx").arg("-t").status().is_err() {
       tracing::error!("{}", "Nginx configuration test failed");
@@ -131,12 +133,26 @@ impl NginxConfig {
   pub fn apply_ssl(&self) {}
 }
 
+pub fn check_dns_record(domian: &str, ip: IpAddr) -> Result<bool, AppError> {
+  let ips = dns_lookup::lookup_host(domian)?;
+  println!("{:?}", ips);
+  if ips.is_empty() {
+    Ok(false)
+  } else {
+    if ips.contains(&ip) {
+      Ok(true)
+    } else {
+      Ok(false)
+    }
+  }
+}
+
 #[cfg(test)]
 mod test {
-  use super::NginxConfig;
+  use super::{NginxConfig, check_dns_record};
 
   #[test]
-  pub fn test_deploy() {
+  fn test_deploy() {
     let nc = NginxConfig::new("/etc/nginx/sprout", false);
     println!(
       "{}",
@@ -146,8 +162,14 @@ mod test {
   }
 
   #[test]
-  pub fn test_revoke() {
+  fn test_revoke() {
     let nc = NginxConfig::new("/etc/nginx/sprout", false);
     nc.remove_config("abcdefghijklmn").unwrap();
+  }
+
+  #[test]
+  fn test_check_dns_record() {
+    let res = check_dns_record("localhost", "127.0.0.1".parse().unwrap()).unwrap();
+    assert_eq!(res, true);
   }
 }

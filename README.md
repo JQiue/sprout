@@ -107,3 +107,11 @@
 | `GET /api/heartbeat`    | 返回 Agent 的状态            | `{}`                                  |
 | `POST /api/upload/init` | 生成上传 token，包含 site_id | `{}`                                  |
 | `POST /api/upload/file` | 上传网页文件                 | `{upload_token, deployment_id, dist}` |
+
+## 使用方法
+
+```sh
+cli login
+cli deploy [target] [skip_build]
+cli 
+```

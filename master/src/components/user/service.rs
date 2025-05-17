@@ -61,7 +61,7 @@ pub async fn user_register(
   password: String,
 ) -> Result<Value, AppError> {
   if state.repo.user().has_user_by_email(&email).await? {
-    return Err(AppError::UserExist);
+    return Err(AppError::UserExists);
   }
   let mut user_type = UserType::Normal;
   if state.repo.user().is_first_user().await? {

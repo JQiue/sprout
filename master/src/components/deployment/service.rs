@@ -1,11 +1,15 @@
+use common::master::CreateDeploymentResponse;
 use entity::deployment::{self, DeploymentStatus};
 use helpers::{jwt, time::utc_now};
 use sea_orm::{IntoActiveModel, Set};
 use serde_json::{Value, json};
 
-use crate::{app::AppState, error::AppError};
+use crate::{app::AppState, error::AppError, types::ServiceResult};
 
-pub async fn create_deployment(state: &AppState, site_id: String) -> Result<Value, AppError> {
+pub async fn create_deployment(
+  state: &AppState,
+  site_id: String,
+) -> ServiceResult<CreateDeploymentResponse> {
   let mut active_site = if let Some(site) = state.repo.site().get_site_by_id(&site_id).await? {
     site
   } else {
@@ -26,13 +30,14 @@ pub async fn create_deployment(state: &AppState, site_id: String) -> Result<Valu
         ..Default::default()
       })
       .await?;
-    let init_response = rpc::AgentRpc::new()
+    let init_response = state
+      .agent_rpc
       .init_upload_session(&agent.ip_address, deployment.site_id.clone())
       .await?;
     let mut active_deployment = deployment.into_active_model();
     active_deployment.status = Set(DeploymentStatus::Uploading);
     active_deployment.deploy_token = Set(Some(init_response.upload_token.clone()));
-    active_deployment.deploy_url = Set(Some(agent.ip_address));
+    active_deployment.deploy_url = Set(Some(agent.ip_address.clone()));
     let deployment = state
       .repo
       .deployment()
@@ -40,19 +45,19 @@ pub async fn create_deployment(state: &AppState, site_id: String) -> Result<Valu
       .await?;
     active_site.deployment_id = Set(Some(deployment.id));
     state.repo.site().update_site(active_site).await?;
-    Ok(json!({
-        "deploy_url": deployment.deploy_url,
-        "deploy_token": deployment.deploy_token,
-        "site_id": deployment.site_id,
-        "agent_id": deployment.agent_id,
-        "deployment_id": deployment.id,
-    }))
+    Ok(CreateDeploymentResponse {
+      deploy_url: agent.ip_address,
+      deploy_token: init_response.upload_token,
+      site_id: deployment.site_id,
+      agent_id: deployment.agent_id,
+      deployment_id: deployment.id,
+    })
   } else {
     Err(AppError::AgentNotFound)
   }
 }
 
-pub async fn get_deployment_info(state: &AppState, deployment_id: u32) -> Result<Value, AppError> {
+pub async fn get_deployment_info(state: &AppState, deployment_id: u32) -> ServiceResult<Value> {
   if let Some(deployment) = state
     .repo
     .deployment()
@@ -70,7 +75,7 @@ pub async fn update_deployment(
   token: String,
   deployment_id: u32,
   status: DeploymentStatus,
-) -> Result<Value, AppError> {
+) -> ServiceResult<Value> {
   jwt::verify::<String>(&token, &state.login_token_key)?;
   state
     .repo
@@ -90,7 +95,7 @@ pub async fn update_deployment_status(
   agent_token: String,
   deployment_id: u32,
   status: DeploymentStatus,
-) -> Result<Value, AppError> {
+) -> ServiceResult<Value> {
   jwt::verify::<String>(&agent_token, &state.register_agent_key)?;
   state
     .repo

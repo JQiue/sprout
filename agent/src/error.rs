@@ -1,72 +1,87 @@
 use actix_web::{HttpResponse, ResponseError, http::StatusCode};
+use common::Response;
+use thiserror::Error;
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum AppError {
-  Error,
-  Env,
+  #[error("Load environment variable error")]
+  LoadEnv {
+    #[from]
+    source: dotenvy::Error,
+  },
+  #[error("Deserializes environment variable error")]
+  DeserializeEnv {
+    #[from]
+    source: envy::Error,
+  },
+  #[error("Temp file not found error")]
+  TempfileNotFound,
+  #[error("Extract tar error")]
+  ExtractTar,
+  #[error("Nginx deploy error")]
+  NginxDeploy,
+  #[error("Internal server error {source:?}")]
+  InternalServerError {
+    #[source]
+    source: Option<Box<dyn std::error::Error + Send + Sync>>,
+  },
 }
 
 impl AppError {
   pub fn code(&self) -> i32 {
     match self {
-      AppError::Error => 1000,
-      AppError::Env => 1001,
+      AppError::InternalServerError { .. }
+      | AppError::LoadEnv { .. }
+      | AppError::DeserializeEnv { .. }
+      | AppError::TempfileNotFound
+      | AppError::ExtractTar
+      | AppError::NginxDeploy => 1000,
     }
   }
-  pub fn message(&self) -> String {
+
+  pub fn status_code(&self) -> StatusCode {
     match self {
-      AppError::Error => "Error".to_string(),
-      AppError::Env => "Env error".to_string(),
+      AppError::InternalServerError { .. }
+      | AppError::LoadEnv { .. }
+      | AppError::DeserializeEnv { .. }
+      | AppError::TempfileNotFound
+      | AppError::ExtractTar
+      | AppError::NginxDeploy => StatusCode::INTERNAL_SERVER_ERROR,
     }
+  }
+}
+
+impl ResponseError for AppError {
+  fn error_response(&self) -> HttpResponse {
+    tracing::error!("{:#?}", self);
+    HttpResponse::build(self.status_code()).json(Response::<Option<()>> {
+      data: None,
+      code: self.code(),
+      msg: self.to_string(), // 使用 thiserror 格式化的错误消息，或调用 user_message()
+    })
   }
 }
 
 impl From<std::io::Error> for AppError {
   fn from(err: std::io::Error) -> Self {
-    tracing::error!("{:#?}", err);
-    AppError::Error
-  }
-}
-
-impl From<envy::Error> for AppError {
-  fn from(err: envy::Error) -> Self {
-    tracing::error!("{:#?}", err);
-    AppError::Env
+    AppError::InternalServerError {
+      source: Some(Box::new(err)),
+    }
   }
 }
 
 impl From<helpers::jwt::Error> for AppError {
   fn from(err: helpers::jwt::Error) -> Self {
-    tracing::error!("{:#?}", err);
-    AppError::Error
+    AppError::InternalServerError {
+      source: Some(Box::new(err)),
+    }
   }
 }
 
 impl From<actix_web::http::header::ToStrError> for AppError {
   fn from(err: actix_web::http::header::ToStrError) -> Self {
-    tracing::error!("{:#?}", err);
-    AppError::Error
-  }
-}
-
-impl From<dotenvy::Error> for AppError {
-  fn from(err: dotenvy::Error) -> Self {
-    tracing::error!("{:#?}", err);
-    AppError::Env
-  }
-}
-
-impl ResponseError for AppError {
-  fn status_code(&self) -> StatusCode {
-    StatusCode::OK
-  }
-  fn error_response(&self) -> HttpResponse {
-    HttpResponse::build(self.status_code()).body(self.to_string())
-  }
-}
-
-impl std::fmt::Display for AppError {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}", self.message())
+    AppError::InternalServerError {
+      source: Some(Box::new(err)),
+    }
   }
 }

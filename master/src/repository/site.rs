@@ -8,10 +8,6 @@ pub struct SiteRepository<'a> {
 }
 
 impl SiteRepository<'_> {
-  // pub async fn get_sites(&self) -> Result<Vec<site::Model>, DbErr> {
-  //   site::Entity::find().all(self.db).await
-  // }
-
   pub async fn create_site(&self, site: site::ActiveModel) -> Result<site::Model, DbErr> {
     site.insert(self.db).await
   }
@@ -34,6 +30,13 @@ impl SiteRepository<'_> {
     site::Entity::find()
       .filter(site::Column::SiteId.eq(site_id))
       .one(self.db)
+      .await
+  }
+
+  pub async fn get_sites_by_user_id(&self, user_id: String) -> Result<Vec<site::Model>, DbErr> {
+    site::Entity::find()
+      .filter(site::Column::UserId.eq(user_id))
+      .all(self.db)
       .await
   }
 }

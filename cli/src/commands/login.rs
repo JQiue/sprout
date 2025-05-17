@@ -1,52 +1,33 @@
-use std::io;
-
-use console::{Style, Term};
-use dialoguer::Password;
-use log::trace;
+use console::Color;
+use tracing::debug;
 
 use crate::{
   MASTER_URL,
-  helper::{get_cli_config, set_cli_config},
+  error::Error,
+  helper::{console_print, get_cli_config, prompt_email, prompt_password, set_cli_config},
 };
 
-pub async fn login() {
-  trace!(">>> login");
-  let term = Term::stdout();
-  let bold_style = Style::new().bold();
-  let green_style = Style::new().green();
-  term
-    .write_line(&format!(
-      "{} {}",
-      bold_style.apply_to("Welcome to the CLI!"),
-      green_style.apply_to("Please enter your login info:")
-    ))
-    .unwrap();
-  term
-    .write_str(&format!("{} ", bold_style.apply_to("Username:")))
-    .unwrap();
-  let mut username = String::new();
-  io::stdin()
-    .read_line(&mut username)
-    .expect("Failed to read line");
-  username = username.trim().to_string();
-  term
-    .write_str(&format!("{} ", bold_style.apply_to("Password:")))
-    .unwrap();
-  let password = Password::new()
-    .with_prompt(bold_style.apply_to("Password:").to_string())
-    .interact()
-    .unwrap();
-  trace!(">>> username: {username}, password: {password}");
-  let rpc = rpc::MasterRpc::new(MASTER_URL.to_string());
-  let token = rpc.login(username, password).await;
-  trace!(">>> token: {token}");
+pub async fn login() -> Result<(), Error> {
+  debug!(">>> login");
+  console_print("Welcome to the CLI! ", None, true, false);
+  console_print(
+    "Please enter your login info:",
+    Some(Color::Cyan),
+    true,
+    true,
+  );
+  let email = prompt_email();
+  let password = prompt_password(false);
+  let rpc = rpc::MasterRpc::new(MASTER_URL.to_string())?;
+  let login_data = rpc.login(email, password).await?;
   let mut cli_config = get_cli_config();
-  cli_config.token = Some(token);
+  cli_config.token = Some(login_data.token);
   set_cli_config(cli_config);
-  term
-    .write_line(&format!(
-      "{}",
-      green_style.apply_to("Login successful! You can now use the CLI.")
-    ))
-    .unwrap();
+  console_print(
+    "Login successful! You can now use the CLI.",
+    Some(Color::Green),
+    false,
+    false,
+  );
+  Ok(())
 }

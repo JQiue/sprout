@@ -1,133 +1,171 @@
-use actix_web::{HttpResponse, ResponseError};
+use actix_web::{HttpResponse, ResponseError, http::StatusCode};
+use common::Response;
+use thiserror::Error;
 
-use crate::response::Response;
-
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum AppError {
-  Error,
-  Env,
-  Database,
+  // 500
+  #[error("Internal server error")]
+  InternalServerError {
+    #[from]
+    source: std::io::Error,
+  },
+  #[error("Environment variable error")]
+  Env {
+    #[from]
+    source: envy::Error,
+  },
+  #[error("Database error")]
+  Database {
+    #[from]
+    source: sea_orm::DbErr,
+  },
+  #[error("Authorization error")]
   Authorization,
+  #[error("User not found")]
   UserNotFound,
+  #[error("Forbidden")]
   Forbidden,
-  UserExist,
+  #[error("User already exists")]
+  UserExists,
+  #[error("Password error")]
   PasswordError,
-  AgentExist,
+  #[error("Agent already exists")]
+  AgentExists,
+  #[error("Agent not found")]
   AgentNotFound,
+  #[error("Deployment not found")]
   DeploymentNotFound,
-  RpcCallError,
+  #[error("RPC call error: {source}")]
+  RpcCallError {
+    #[from]
+    source: rpc::error::Error,
+  },
+  #[error("Not implemented")]
   NotImplemented,
+  #[error("Site not found")]
   SiteNotFound,
+  #[error("Params error")]
+  Params {
+    #[from]
+    souce: validator::ValidationErrors,
+  },
+  #[error("To str error")]
+  ToStrError {
+    #[from]
+    source: actix_web::http::header::ToStrError,
+  },
+  #[error("Hash error")]
+  HashError {
+    #[from]
+    source: helpers::hash::Error,
+  },
+  #[error("JWT error: {source}")]
+  JwtError {
+    #[source]
+    source: helpers::jwt::Error,
+  },
+  #[error("InvalidJwtSignature")]
+  InvalidJwtSignature,
+  #[error("ExpiredSignature")]
+  ExpiredSignature,
+  #[error("Address paser error")]
+  AddrParseError {
+    #[from]
+    source: std::net::AddrParseError,
+  },
+  #[error("Other error: {message}")]
+  Other {
+    message: String,
+    #[source]
+    source: Option<Box<dyn std::error::Error + Send + Sync>>,
+  },
 }
 
 impl AppError {
   pub fn code(&self) -> i32 {
     match self {
-      AppError::Error => 1000,
-      AppError::Database => 1001,
-      AppError::Env => 1002,
-      AppError::Authorization => 1003,
-      AppError::Forbidden => 1004,
-      AppError::UserNotFound => 1005,
-      AppError::UserExist => 1006,
-      AppError::PasswordError => 1007,
-      AppError::AgentExist => 2000,
-      AppError::AgentNotFound => 2001,
-      AppError::DeploymentNotFound => 2002,
-      AppError::SiteNotFound => 2003,
-      AppError::RpcCallError => 3001,
+      AppError::InternalServerError { .. }
+      | AppError::Database { .. }
+      | AppError::Env { .. }
+      | AppError::RpcCallError { .. }
+      | AppError::JwtError { .. }
+      | AppError::Other { .. }
+      | AppError::ToStrError { .. }
+      | AppError::AddrParseError { .. }
+      | AppError::HashError { .. } => 1000,
+      AppError::ExpiredSignature | AppError::InvalidJwtSignature => 2000,
+      AppError::PasswordError => 2001,
+      AppError::Authorization => 2002,
+      AppError::Forbidden => 2003,
+      AppError::Params { .. } => 2004,
+      AppError::AgentNotFound
+      | AppError::DeploymentNotFound
+      | AppError::SiteNotFound
+      | AppError::UserNotFound => 2005,
+      AppError::UserExists | AppError::AgentExists => 2006,
       AppError::NotImplemented => 9999,
     }
   }
-  pub fn message(&self) -> String {
+
+  pub fn status_code(&self) -> StatusCode {
     match self {
-      AppError::Error => "err".to_string(),
-      AppError::Env => "Env".to_string(),
-      AppError::Forbidden => "Forbidden".to_string(),
-      AppError::Authorization => "Authorization".to_string(),
-      AppError::Database => "Database".to_string(),
-      AppError::NotImplemented => "Not implemented".to_string(),
-      AppError::UserNotFound => "User not found".to_string(),
-      AppError::UserExist => "User exist".to_string(),
-      AppError::PasswordError => "Password error".to_string(),
-      AppError::AgentExist => "Agent exist".to_string(),
-      AppError::AgentNotFound => "Agent not found".to_string(),
-      AppError::DeploymentNotFound => "Deployment not found".to_string(),
-      AppError::RpcCallError => "Rpc call error".to_string(),
-      AppError::SiteNotFound => "Site not found".to_string(),
+      AppError::InternalServerError { .. }
+      | AppError::Database { .. }
+      | AppError::Env { .. }
+      | AppError::RpcCallError { .. }
+      | AppError::JwtError { .. }
+      | AppError::HashError { .. }
+      | AppError::Other { .. }
+      | AppError::AddrParseError { .. }
+      | AppError::ToStrError { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+      AppError::Authorization
+      | AppError::PasswordError
+      | AppError::InvalidJwtSignature
+      | AppError::ExpiredSignature => StatusCode::UNAUTHORIZED,
+      AppError::Forbidden => StatusCode::FORBIDDEN,
+      AppError::UserNotFound
+      | AppError::SiteNotFound
+      | AppError::AgentNotFound
+      | AppError::DeploymentNotFound => StatusCode::NOT_FOUND,
+      AppError::UserExists | AppError::AgentExists => StatusCode::CONFLICT,
+      AppError::Params { .. } => StatusCode::BAD_REQUEST,
+      AppError::NotImplemented => StatusCode::NOT_IMPLEMENTED,
     }
+  }
+
+  pub fn user_message(&self) -> String {
+    "user message".to_string()
   }
 }
 
 impl ResponseError for AppError {
   fn error_response(&self) -> HttpResponse {
-    tracing::error!("{:#?}", self.message());
-    HttpResponse::Ok().json(Response::<()> {
+    tracing::error!("{}", self.to_string());
+    HttpResponse::build(self.status_code()).json(Response::<Option<()>> {
       data: None,
       code: self.code(),
-      msg: self.message(),
+      msg: self.to_string(), // 使用 thiserror 格式化的错误消息，或调用 user_message()
     })
-  }
-}
-
-impl std::fmt::Display for AppError {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}", self.message())
-  }
-}
-
-impl From<std::io::Error> for AppError {
-  fn from(err: std::io::Error) -> Self {
-    tracing::error!("{:#?}", err);
-    AppError::Error
-  }
-}
-
-impl From<envy::Error> for AppError {
-  fn from(err: envy::Error) -> Self {
-    tracing::error!("{:#?}", err);
-    AppError::Env
   }
 }
 
 impl From<helpers::jwt::Error> for AppError {
   fn from(err: helpers::jwt::Error) -> Self {
-    tracing::error!("{:#?}", err.kind());
-    Self::Authorization
+    match err.kind() {
+      helpers::jwt::ErrorKind::InvalidSignature => AppError::InvalidJwtSignature,
+      helpers::jwt::ErrorKind::ExpiredSignature => AppError::ExpiredSignature,
+      _ => AppError::JwtError { source: err },
+    }
   }
 }
 
-impl From<actix_web::http::header::ToStrError> for AppError {
-  fn from(err: actix_web::http::header::ToStrError) -> Self {
-    tracing::error!("{:#?}", err);
-    AppError::Error
-  }
-}
-
-impl From<sea_orm::DbErr> for AppError {
-  fn from(err: sea_orm::DbErr) -> Self {
-    tracing::error!("{:#?}", err);
-    AppError::Database
-  }
-}
-
-impl From<helpers::hash::Error> for AppError {
-  fn from(err: helpers::hash::Error) -> Self {
-    tracing::error!("{:#?}", err);
-    AppError::Error
-  }
-}
-
-impl From<rpc::error::AppError> for AppError {
-  fn from(err: rpc::error::AppError) -> Self {
-    tracing::error!("{:#?}", err);
-    AppError::RpcCallError
-  }
-}
-
-impl From<std::net::AddrParseError> for AppError {
-  fn from(err: std::net::AddrParseError) -> Self {
-    tracing::error!("{:#?}", err);
-    AppError::Error
-  }
-}
+// impl From<rpc::error::Error> for AppError {
+//   fn from(err: rpc::error::Error) -> Self {
+//     match err.kind() {
+//       helpers::jwt::ErrorKind::InvalidSignature => AppError::InvalidJwtSignature,
+//       helpers::jwt::ErrorKind::ExpiredSignature => AppError::ExpiredSignature,
+//       _ => AppError::JwtError { source: err },
+//     }
+//   }
+// }

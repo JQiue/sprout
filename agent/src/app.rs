@@ -32,12 +32,21 @@ pub fn config_app(cfg: &mut ServiceConfig) {
 }
 
 pub async fn start() -> Result<(), AppError> {
-  let app_config = Config::from_env()?;
+  let Config {
+    host,
+    port,
+    workers,
+    storage_path,
+    nginx_config_path,
+    upload_token_key,
+    upload_token_key_expire,
+    ..
+  } = Config::from_env()?;
   let state = AppState {
-    storage_path: app_config.storage_path,
-    nginx_config_path: app_config.nginx_config_path,
-    upload_token_key: app_config.upload_token_key,
-    upload_token_key_expire: app_config.upload_token_key_expire,
+    storage_path,
+    nginx_config_path,
+    upload_token_key,
+    upload_token_key_expire,
   };
   Ok(
     HttpServer::new(move || {
@@ -47,8 +56,8 @@ pub async fn start() -> Result<(), AppError> {
         .wrap(middleware::Logger::default())
         .configure(config_app)
     })
-    .bind((app_config.host, app_config.port))?
-    .workers(app_config.workers)
+    .bind((host, port))?
+    .workers(workers)
     .run()
     .await?,
   )

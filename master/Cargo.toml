@@ -28,3 +28,5 @@ sea-orm = { workspace = true, features = [
   "macros",
   "debug-print",
 ] }
+validator = { workspace = true, features = ["derive"] }
+thiserror = { workspace = true }

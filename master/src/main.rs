@@ -9,7 +9,8 @@ mod helper;
 mod middlewares;
 mod migration;
 mod repository;
-mod response;
+mod traits;
+mod types;
 
 #[actix_web::main]
 async fn main() -> Result<(), error::AppError> {
@@ -18,9 +19,9 @@ async fn main() -> Result<(), error::AppError> {
     .with_target("sqlx::query", LevelFilter::OFF)
     .with_target("html5ever", LevelFilter::OFF)
     .with_target("rustls", LevelFilter::OFF);
-  let env_filter = EnvFilter::try_from_default_env()
-    .or_else(|_| EnvFilter::try_new("info"))
-    .unwrap();
+  let env_filter = EnvFilter::builder()
+    .with_default_directive(LevelFilter::INFO.into())
+    .from_env_lossy();
   tracing_subscriber::registry()
     .with(tracing_subscriber::fmt::layer().with_timer(fmt::time::LocalTime::rfc_3339()))
     .with(target_filter)

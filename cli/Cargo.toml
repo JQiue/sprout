@@ -2,6 +2,7 @@
 name = "cli"
 version.workspace = true
 edition.workspace = true
+description = "The command line interface for user-facing commands."
 
 [dependencies]
 rpc = { workspace = true }
@@ -9,15 +10,19 @@ aho-corasick = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 helpers = { workspace = true, features = ["jwt", "rand"] }
-log = { workspace = true }
-env_logger = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = [
+  "env-filter",
+  "local-time",
+] }
 tokio = { workspace = true, features = ["full"] }
 clap = { version = "4.5.35", features = ["derive"] }
-indicatif = "0.17.11"
+indicatif = { version = "0.17.11" }
 console = { version = "0.15.11", default-features = false, features = [
   "ansi-parsing",
 ] }
+dialoguer = { version = "0.11.0", features = ["completion"] }
+comfy-table = { workspace = true }
 tar = "0.4.44"
 rust-embed = "8.6.0"
-dialoguer = "0.11.0"
 dirs = "6.0.0"

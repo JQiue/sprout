@@ -26,7 +26,7 @@ pub struct AppState {
   pub login_token_key: String,
   pub register_agent_key: String,
   pub register_agent_key_expire: i64,
-  pub agent_rpc: rpc::AgentRpc,
+  pub agent_rpc: AgentRpc,
   pub cloudflare_rpc: rpc::CloudflareRpc,
 }
 
@@ -62,9 +62,9 @@ pub async fn start() -> Result<(), AppError> {
     login_token_key,
     register_agent_key,
     register_agent_key_expire,
-    agent_rpc: AgentRpc::new(),
+    agent_rpc: AgentRpc::new()?,
     cloudflare_rpc: CloudflareRpc::new(cloudflare_zone_id, cloudflare_email, cloudflare_api_key)
-      .await,
+      .await?,
   };
   Ok(
     HttpServer::new(move || {

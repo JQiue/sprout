@@ -8,7 +8,7 @@ use helpers::{jwt, time::utc_now};
 use sea_orm::{ActiveModelTrait, IntoActiveModel, Set};
 use serde_json::{Value, json};
 
-use crate::{app::AppState, error::AppError};
+use crate::{app::AppState, error::AppError, types::ServiceResult};
 
 pub async fn register_agent(
   state: &AppState,
@@ -17,7 +17,7 @@ pub async fn register_agent(
   ip_address: String,
   storage_path: String,
   available_space: u32,
-) -> Result<Value, AppError> {
+) -> ServiceResult<Value> {
   if !state.repo.user().is_admin_user(&user_id).await? {
     return Err(AppError::Forbidden);
   }
@@ -27,7 +27,7 @@ pub async fn register_agent(
     .has_agent_by_ip(ip_address.clone())
     .await?
   {
-    return Err(AppError::AgentExist);
+    return Err(AppError::AgentExists);
   }
 
   let token = jwt::sign::<String>(
@@ -49,9 +49,10 @@ pub async fn register_agent(
   Ok(json!(result))
 }
 
-pub async fn get_agent_status(state: &AppState, agent_id: u32) -> Result<Value, AppError> {
+pub async fn get_agent_status(state: &AppState, agent_id: u32) -> ServiceResult<Value> {
   if let Some(agent) = state.repo.agent().get_agent(agent_id).await? {
-    let data = rpc::AgentRpc::new()
+    let data = state
+      .agent_rpc
       .get_agent_heartbeat(&agent.ip_address)
       .await?;
     let mut active_agent = agent.into_active_model();
@@ -73,7 +74,7 @@ pub async fn refresh_agent_token(
   state: &AppState,
   user_id: String,
   agent_id: u32,
-) -> Result<Value, AppError> {
+) -> ServiceResult<Value> {
   if !state.repo.user().is_admin_user(&user_id).await? {
     return Err(AppError::Forbidden);
   }
@@ -106,12 +107,14 @@ pub async fn assign_task(
   r#type: String,
   site_id: String,
   deployment_id: u32,
-) -> Result<Value, AppError> {
-  let site = if let Some(site) = state.repo.site().get_site_by_id(&site_id).await? {
-    site
-  } else {
-    return Err(AppError::SiteNotFound);
-  };
+  bind_domain: Option<String>,
+) -> ServiceResult<Value> {
+  let site = state
+    .repo
+    .site()
+    .get_site_by_id(&site_id)
+    .await?
+    .ok_or(AppError::SiteNotFound)?;
   let deployment = state
     .repo
     .deployment()
@@ -137,7 +140,7 @@ pub async fn assign_task(
         deployment_id,
         agent.ip_address,
         site.bandwidth.to_string(),
-        site.domain,
+        bind_domain.clone(),
         preview_domain.clone(),
       )
       .await?;
@@ -150,9 +153,19 @@ pub async fn assign_task(
       .deployment()
       .update_deployment(active_deployment)
       .await?;
-    return Ok(json!({
-      "preview_url": preview_url
-    }));
+    if let Some(bind_domain) = bind_domain {
+      let mut active_site = site.into_active_model();
+      active_site.domain = Set(Some(bind_domain.clone()));
+      state.repo.site().update_site(active_site).await?;
+      return Ok(json!({
+        "preview_url": preview_url,
+        "bind_url": "http://".to_string() + &bind_domain,
+      }));
+    } else {
+      return Ok(json!({
+        "preview_url": preview_url,
+      }));
+    }
   } else if r#type == "revoke" {
     state
       .agent_rpc

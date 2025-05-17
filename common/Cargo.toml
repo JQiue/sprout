@@ -7,3 +7,6 @@ publish.workspace = true
 
 [dependencies]
 serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+validator = { workspace = true, features = ["derive"] }
+entity = { workspace = true }

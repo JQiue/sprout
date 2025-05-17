@@ -37,18 +37,16 @@ mockall = "0.13.1"
 cloudflare = { git = "https://github.com/JQiue/cloudflare-rs", branch = "feat/async_client", default-features = false, features = [
   "rustls-tls",
 ] }
-log = "0.4.27"
-env_logger = "0.11.8"
 tokio = "1.44.2"
-
-[profile.dev]
-RUST_LOG = "trace"
+dns-lookup = "2.0.4"
+validator = "0.20.0"
+comfy-table = "7.1.4"
+thiserror = "2.0.12"
 
 [profile.release]
 lto = true
 opt-level = "z"
 panic = "abort"
 codegen-units = 1
-overflow-checks = false
 debug = false
 strip = true

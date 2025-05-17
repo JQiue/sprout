@@ -13,8 +13,3 @@ pub struct UpdateDeploymentStatusBody {
   pub deployment_id: u32,
   pub status: DeploymentStatus,
 }
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct CreateDeploymentBody {
-  pub site_id: String,
-}
