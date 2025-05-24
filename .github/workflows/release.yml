@@ -47,7 +47,7 @@ jobs:
       - uses: taiki-e/upload-rust-binary-action@v1
         with:
           bin: pupup-agent,pupup-cli,pupup-master
-          # target: ${{ matrix.target }}
+          target: ${{ matrix.target }}
           tar: none
           zip: none
           # include: README.md
