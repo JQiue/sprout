@@ -48,10 +48,10 @@ jobs:
         with:
           bin: pupup-agent,pupup-cli,pupup-master
           # target: ${{ matrix.target }}
-          # tar: unix
-          # zip: windows
+          tar: none
+          zip: none
           # include: README.md
-          # archive: pupup-${{ matrix.target }}
+          archive: pupup-${{ matrix.target }}
           token: ${{ secrets.GITHUB_TOKEN }}
       # - name: Publish NPM Package
       #   run: |
