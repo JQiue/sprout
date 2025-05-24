@@ -54,5 +54,6 @@ strip = true
 
 [workspace.metadata.release]
 push = false
-pre-release-hook = ["npm.cmd", "version", "{{version}}"]
+# pre-release-hook = ["npm.cmd", "version", "{{version}}", "-W npm"]
+pre-release-hook = ["bash", "../script.sh", "{{version}}"]
 tag-name = "v{version}"
