@@ -30,8 +30,8 @@ jobs:
     strategy:
       matrix:
         include:
-          - target: x86_64-unknown-linux-gnu
-            os: ubuntu-latest
+          # - target: x86_64-unknown-linux-gnu
+          #   os: ubuntu-latest
           - target: x86_64-unknown-linux-musl
             os: ubuntu-latest
           - target: x86_64-apple-darwin
@@ -49,23 +49,27 @@ jobs:
           bin: pupup-agent,pupup-cli,pupup-master
           target: ${{ matrix.target }}
           tar: all
+          zip: none
           include: README.md
           archive: pupup-${{ matrix.target }}
           token: ${{ secrets.GITHUB_TOKEN }}
-      # - name: Publish NPM Package
-      #   run: |
-      #     cd npm
-      #     npm publish --access public --no-git-checks
-      # - uses: JS-DevTools/npm-publish@v3
-      #   with:
-      #     token: ${{ secrets.NPM_TOKEN }}
   publish-npm:
     needs: upload-assets
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: Run cli
         run: |
-          wget https://github.com/JQiue/sprout/releases/download/${{ github.ref_name }}/pupup-x86_64-unknown-linux-gnu.tar.gz
           wget https://github.com/JQiue/sprout/releases/download/${{ github.ref_name }}/pupup-x86_64-unknown-linux-musl.tar.gz
           wget https://github.com/JQiue/sprout/releases/download/${{ github.ref_name }}/pupup-x86_64-pc-windows-msvc.tar.gz
-          ls -a
+          wget https://github.com/JQiue/sprout/releases/download/${{ github.ref_name }}/pupup-x86_64-apple-darwin.tar.gz
+          tar -xf pupup-x86_64-unknown-linux-musl.tar.gz pupup-cli
+          mv pupup-cli npm/bin/pupup_linux_x64
+          tar -xf pupup-x86_64-pc-windows-msvc.tar.gz pupup-cli.exe
+          mv pupup-cli.exe npm/bin/pupup_win_x64.exe
+          tar -xf pupup-x86_64-apple-darwin.tar.gz pupup-cli
+          mv pupup-cli npm/bin/pupup_macos_x64
+          ls npm/bin
+      # - uses: JS-DevTools/npm-publish@v3
+      #   with:
+      #     token: ${{ secrets.NPM_TOKEN }}
