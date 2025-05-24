@@ -51,3 +51,8 @@ panic = "abort"
 codegen-units = 1
 debug = false
 strip = true
+
+[workspace.metadata.release]
+push = false
+pre-release-hook = ["npm"]
+tag-name = "v{version}"
