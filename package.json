@@ -1,6 +1,6 @@
 {
   "name": "@qgmtn/pupup",
-  "version": "0.0.23",
+  "version": "0.0.24",
   "description": "",
   "bin": {
     "pupup": "index.js"
