@@ -42,13 +42,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install Rust
-        run: rustup update stable
+        run: rustup toolchain install stable --profile minimal
+      - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/upload-rust-binary-action@v1
         with:
           bin: pupup-agent,pupup-cli,pupup-master
           target: ${{ matrix.target }}
-          tar: unix
-          zip: windows
-          include: README.md
+          # tar: unix
+          # zip: windows
+          # include: README.md
           archive: pupup-${{ matrix.target }}
           token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish NPM Package
+        run: |
+          cd npm
+          npm publish --access public --no-git-checks
+      - uses: JS-DevTools/npm-publish@v3
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
