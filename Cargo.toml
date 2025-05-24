@@ -2,7 +2,7 @@
 members = ["master", "agent", "cli", "migration", "entity", "rpc", "common"]
 
 [workspace.package]
-version = "0.0.18"
+version = "0.0.19"
 authors = ["JQiue"]
 edition = "2024"
 publish = false
