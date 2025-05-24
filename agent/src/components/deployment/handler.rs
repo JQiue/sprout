@@ -17,7 +17,7 @@ pub async fn init_upload(
   state: Data<AppState>,
   body: Json<InitUploadRequest>,
 ) -> Result<HttpResponse, AppError> {
-  service::init_upload(&state, body.0.site_id)
+  service::get_upload_token(&state, body.0.site_id)
     .await
     .into_http_response()
 }

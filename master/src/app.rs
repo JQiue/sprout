@@ -1,12 +1,12 @@
-use std::net::Ipv4Addr;
+use std::{net::Ipv4Addr, time::Duration};
 
 use actix_cors::Cors;
 use actix_web::{
   App, HttpServer, middleware,
+  rt::time,
   web::{self, ServiceConfig},
 };
 use rpc::{AgentRpc, CloudflareRpc};
-use sea_orm::DatabaseConnection;
 
 use crate::{
   components::{
@@ -17,11 +17,11 @@ use crate::{
   error::AppError,
   migration::migrate,
   repository::RepositoryManager,
+  timing::scheduled_task,
 };
 
 #[derive(Debug, Clone)]
 pub struct AppState {
-  pub db: DatabaseConnection,
   pub repo: RepositoryManager,
   pub login_token_key: String,
   pub register_agent_key: String,
@@ -56,9 +56,9 @@ pub async fn start() -> Result<(), AppError> {
   } = Config::from_env()?;
   let db = migrate(&database_url).await?;
   db.ping().await?;
+  let repo = RepositoryManager::new(db);
   let state = AppState {
-    db: db.clone(),
-    repo: RepositoryManager::new(db),
+    repo: repo.clone(),
     login_token_key,
     register_agent_key,
     register_agent_key_expire,
@@ -66,6 +66,15 @@ pub async fn start() -> Result<(), AppError> {
     cloudflare_rpc: CloudflareRpc::new(cloudflare_zone_id, cloudflare_email, cloudflare_api_key)
       .await?,
   };
+
+  actix_web::rt::spawn(async move {
+    let mut interval = time::interval(Duration::from_secs(5));
+    loop {
+      interval.tick().await;
+      scheduled_task(&repo).await;
+    }
+  });
+
   Ok(
     HttpServer::new(move || {
       App::new()

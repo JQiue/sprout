@@ -14,7 +14,10 @@ use helpers::{self, jwt};
 
 use super::model::UploadForm;
 
-pub async fn init_upload(state: &AppState, site_id: String) -> ServiceResult<InitUploadResponse> {
+pub async fn get_upload_token(
+  state: &AppState,
+  site_id: String,
+) -> ServiceResult<InitUploadResponse> {
   let upload_token = jwt::sign(
     site_id,
     &state.upload_token_key,
@@ -93,10 +96,10 @@ pub async fn revoke_site(state: &AppState, site_id: String) -> ServiceResult<Val
 
 #[cfg(test)]
 mod tests {
-  use super::init_upload;
+  use super::get_upload_token;
   use crate::app::AppState;
   #[actix_web::test]
-  async fn test_init_upload() {
+  async fn test_get_upload_token() {
     let state = AppState {
       nginx_config_path: "/etc/nginx/sprout".to_string(),
       storage_path: "./".to_string(),
@@ -105,7 +108,7 @@ mod tests {
       public_ip: "192.168.5.12".parse().unwrap(),
     };
 
-    match init_upload(&state, "alfjalfafj".to_string()).await {
+    match get_upload_token(&state, "alfjalfafj".to_string()).await {
       Ok(res) => {
         println!("Upload token: {}", res.upload_token);
       }

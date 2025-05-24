@@ -5,13 +5,12 @@ mod helper;
 
 use clap::{Parser, Subcommand};
 use commands::{deploy::deploy, list::list, login::login, signup::signup};
-use console::Color;
 use error::Error;
-use helper::{console_print, print_error};
+use helper::print_error;
 use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
 #[derive(Parser)]
-#[command(version, author, about, long_about = None)]
+#[command(name = "pupup", bin_name = "pupup",version, author, about, long_about = None)]
 pub struct Cli {
   /// Choose the program mode run in
   #[command(subcommand)]
@@ -22,11 +21,11 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-  /// user singn up
+  /// sign up
   Signup,
-  /// user login
+  /// login
   Login,
-  /// user deploy
+  /// deploy site
   Deploy {
     #[arg(long, help = "Specify deployment directory")]
     target: Option<String>,

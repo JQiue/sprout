@@ -3,6 +3,10 @@ name = "agent"
 version.workspace = true
 edition.workspace = true
 
+[[bin]]
+name = "pupup-agent"
+path = "src/main.rs"
+
 [dependencies]
 common = { workspace = true }
 actix-web = { workspace = true, features = ["rustls"] }

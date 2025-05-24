@@ -5,7 +5,7 @@ use entity::{
   deployment::DeploymentStatus,
 };
 use helpers::{jwt, time::utc_now};
-use sea_orm::{ActiveModelTrait, IntoActiveModel, Set};
+use sea_orm::{IntoActiveModel, Set};
 use serde_json::{Value, json};
 
 use crate::{app::AppState, error::AppError, types::ServiceResult};
@@ -45,7 +45,7 @@ pub async fn register_agent(
     created_at: Set(utc_now()),
     ..Default::default()
   };
-  let result = active_agent.insert(&state.db).await?;
+  let result = state.repo.agent().create_agent(active_agent).await?;
   Ok(json!(result))
 }
 

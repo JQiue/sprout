@@ -60,9 +60,16 @@ impl NginxConfig {
     }
   }
 
-  pub fn generate_config(&self, server_name: &str, root_path: &str, bandwidth: &str) -> String {
+  pub fn generate_config(
+    &self,
+    site_id: &str,
+    server_name: &str,
+    root_path: &str,
+    bandwidth: &str,
+  ) -> String {
     let mut config = String::new();
     config.push_str("server {\n");
+    config.push_str(&format!("    access_log logs/{} pupup;\n", site_id));
     config.push_str("    listen 80;\n");
     config.push_str(&format!("    server_name {};\n", server_name));
     config.push_str("    location / {\n");
@@ -89,7 +96,7 @@ impl NginxConfig {
 
   pub fn deploy(&self, server_name: &str, root_path: &str, bandwidth: &str, site_id: &str) -> bool {
     // 生成配置文件内容
-    let config_content = self.generate_config(server_name, root_path, bandwidth);
+    let config_content = self.generate_config(site_id, server_name, root_path, bandwidth);
 
     // 暂时简单写入，以后替换为原子写入
     if let Err(e) = fs::create_dir_all(self.config_path.as_path()) {
@@ -171,17 +178,17 @@ mod test {
 
   #[test]
   fn test_deploy() {
-    let nc = NginxConfig::new("/etc/nginx/sprout", false);
+    let nc = NginxConfig::new("../target/sprout", true);
     println!(
       "{}",
-      nc.generate_config("jinqiu.wang", "/var/www/html", "100")
+      nc.generate_config("abcdefghijklmn", "jinqiu.wang", "/var/www/html", "100k")
     );
-    nc.deploy("jinqiu.wang", "/var/www/html", "100", "abcdefghijklmn");
+    nc.deploy("jinqiu.wang", "/var/www/html", "100k", "abcdefghijklmn");
   }
 
   #[test]
   fn test_revoke() {
-    let nc = NginxConfig::new("/etc/nginx/sprout", false);
+    let nc = NginxConfig::new("../target/sprout", false);
     nc.remove_config("abcdefghijklmn").unwrap();
   }
 

@@ -7,9 +7,13 @@ pub enum Error {
 
 impl From<rpc::error::Error> for Error {
   fn from(err: rpc::error::Error) -> Self {
+    tracing::error!("{:#?}", err);
     match err {
       rpc::error::Error::Internal { .. } => Error::RpcCall,
-      rpc::error::Error::RpcCall { .. } => Error::RpcCall,
+      rpc::error::Error::RpcCall { source } => {
+        tracing::error!("{:#?}", source);
+        Error::RpcCall
+      }
       rpc::error::Error::CloudflareFramework { .. } => Error::RpcCall,
       rpc::error::Error::CloudflareResponse { .. } => Error::RpcCall,
       rpc::error::Error::ConnectAgent { .. } => Error::RpcCall,

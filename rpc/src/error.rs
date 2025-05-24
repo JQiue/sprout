@@ -26,23 +26,26 @@ pub enum Error {
   ConnectMaster,
   #[error("Build request error")]
   BuildRequest,
+  #[error("Invalid content type")]
+  InvalidContentType,
+  #[error("Decode error")]
+  Decode,
   #[error("Rpc call error: {source}")]
   RpcCall {
     #[source]
     source: reqwest::Error,
   },
-  #[error("Invalid content type")]
-  InvalidContentType,
 }
 
 impl From<reqwest::Error> for Error {
   fn from(err: reqwest::Error) -> Self {
+    tracing::error!("{:#?}", err);
     if err.is_builder() {
       Error::BuildRequest
     } else if err.is_connect() {
       Error::ConnectAgent(err.url().unwrap().to_string())
     } else if err.is_decode() {
-      Error::RpcCall { source: err }
+      Error::Decode
     } else {
       Error::RpcCall { source: err }
     }

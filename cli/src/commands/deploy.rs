@@ -121,6 +121,7 @@ async fn deploy_project(path: String) -> Result<(String, Option<String>), Error>
   };
   let master_rpc = rpc::MasterRpc::new(MASTER_URL.to_string())?;
   let agent_rpc = rpc::AgentRpc::new()?;
+
   if let Some(token) = get_cli_config().token {
     if let Some(site_id) = get_project_config().site_id {
       let path = tar_directory(path.clone(), &site_id);
@@ -131,7 +132,7 @@ async fn deploy_project(path: String) -> Result<(String, Option<String>), Error>
         .upload_file(
           &deploy_data.deploy_url,
           deploy_data.deploy_token,
-          deploy_data.deployment_id,
+          // deploy_data.deployment_id,
           path,
         )
         .await?;
@@ -155,7 +156,7 @@ async fn deploy_project(path: String) -> Result<(String, Option<String>), Error>
         .upload_file(
           &deploy_data.deploy_url,
           deploy_data.deploy_token,
-          deploy_data.deployment_id,
+          // deploy_data.deployment_id,
           path,
         )
         .await?;
@@ -191,7 +192,7 @@ async fn deploy_project(path: String) -> Result<(String, Option<String>), Error>
       .upload_file(
         &deploy_data.deploy_url,
         deploy_data.deploy_token,
-        deploy_data.deployment_id,
+        // deploy_data.deployment_id,
         path,
       )
       .await;

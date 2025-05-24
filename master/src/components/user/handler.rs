@@ -3,16 +3,13 @@ use crate::{
   components::user::{model::*, service},
   error::AppError,
   middlewares::JwtPayload,
-  traits::{IntoHttpResponse, MasterResponse},
+  traits::IntoHttpResponse,
 };
 use actix_web::{
   HttpResponse, get, post,
   web::{Data, Json, ReqData},
 };
-use common::{
-  Response,
-  master::{UserLoginRequest, UserRegisterRequest},
-};
+use common::master::{UserLoginRequest, UserRegisterRequest};
 use validator::Validate;
 
 #[get("/user/casual")]

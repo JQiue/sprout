@@ -1,0 +1,9 @@
+{
+  "name": "pupup",
+  "version": "0.0.1",
+  "description": "",
+  "bin": {
+    "pupup": "./index.js"
+  },
+  "license": "ISC"
+}

@@ -13,23 +13,34 @@ use common::{
   },
 };
 
-use reqwest::header::CONTENT_TYPE;
+use reqwest::Method;
 use reqwest::{
-  Response,
-  header::{ACCEPT, HeaderMap},
+  header::{ACCEPT, CONTENT_TYPE, HeaderMap},
   multipart::{Form, Part},
 };
-use serde::de::DeserializeOwned;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use serde_json::{Value, json};
 
 use crate::error::Error;
+
+fn build_base_client_builder() -> Result<reqwest::Client, Error> {
+  reqwest::Client::builder()
+    .default_headers({
+      let mut headers = HeaderMap::new();
+      headers.insert(ACCEPT, "application/json".parse().unwrap());
+      headers
+    })
+    .tcp_keepalive(Some(Duration::from_secs(60)))
+    .timeout(Duration::from_secs(3))
+    .no_proxy()
+    .build()
+    .map_err(|_| Error::BuildRequest)
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 struct RpcResponse<T> {
   pub code: i32,
   pub msg: String,
-  // #[serde(skip_serializing_if = "Option::is_none")]
   pub data: T,
 }
 
@@ -51,27 +62,18 @@ pub struct AgentRpc {
 impl AgentRpc {
   pub fn new() -> Result<Self, Error> {
     Ok(Self {
-      api_client: reqwest::Client::builder()
-        .default_headers({
-          let mut headers = HeaderMap::new();
-          headers.insert(ACCEPT, "application/json".parse().unwrap());
-          headers
-        })
-        .tcp_keepalive(Some(Duration::from_secs(60)))
-        .timeout(Duration::from_secs(3))
-        .build()
-        .map_err(|_| Error::BuildRequest)?,
+      api_client: build_base_client_builder()?,
     })
   }
 
   pub async fn fetch<T: Serialize, B: DeserializeOwned>(
     &self,
     agent_ip: &str,
-    method: &str,
+    method: reqwest::Method,
     path: &str,
     body: Option<T>,
   ) -> Result<B, Error> {
-    let url = format!("http://{}:5001/api/{}", agent_ip, path);
+    let url = format!("http://{}:5001/api{}", agent_ip, path);
     let client = if method == "post" {
       self.api_client.post(url).json(&body)
     } else {
@@ -98,7 +100,7 @@ impl AgentRpc {
 
   pub async fn get_agent_heartbeat(&self, agent_ip: &str) -> Result<HeartbeatResponse, Error> {
     let body = self
-      .fetch::<_, HeartbeatResponse>(agent_ip, "get", "heartbeat", Some(()))
+      .fetch::<_, HeartbeatResponse>(agent_ip, Method::GET, "/heartbeat", Some(()))
       .await?;
     Ok(body)
   }
@@ -111,8 +113,8 @@ impl AgentRpc {
     let body = self
       .fetch::<_, InitUploadResponse>(
         agent_ip,
-        "post",
-        "upload/init",
+        Method::POST,
+        "/upload/init",
         Some(InitUploadRequest { site_id }),
       )
       .await?;
@@ -123,7 +125,6 @@ impl AgentRpc {
     &self,
     agent_ip: &str,
     upload_token: String,
-    deployment_id: u32,
     path: PathBuf,
   ) -> Result<(), Error> {
     let path_buf = path.clone();
@@ -136,15 +137,17 @@ impl AgentRpc {
       .await?
       .file_name(file_name)
       .mime_str("application/octet-stream")?;
-    let mut form = Form::new().part("dist", part);
+    let mut form = Form::new();
+    form = form.part("dist", part);
     form = form.part("upload_token", Part::text(upload_token));
-    form = form.part("deployment_id", Part::text(deployment_id.to_string()));
     let resp = self
       .api_client
       .post(format!("http://{}:5001/api/upload/file", agent_ip))
       .multipart(form)
+      .timeout(Duration::from_secs(60))
       .send()
       .await?;
+    println!("{:#?}", resp);
     if resp.status().is_success() {
       resp.json::<RpcResponse<()>>().await?;
       Ok(())
@@ -167,8 +170,8 @@ impl AgentRpc {
     self
       .fetch::<_, Value>(
         &ip_address,
-        "post",
-        "task/publish",
+        Method::POST,
+        "/task/publish",
         Some(TaskPublishRequest {
           site_id,
           deployment_id,
@@ -179,15 +182,6 @@ impl AgentRpc {
       )
       .await?;
     Ok(true)
-
-    // if resp.status().is_success() {
-    //   resp.json::<RpcResponse<()>>().await?;
-    //   Ok(true)
-    // } else {
-    //   let status_code = resp.status().as_u16();
-    //   let data = resp.json::<RpcResponse<Value>>().await?;
-    //   Err(Error::Api(status_code, data.code, data.msg))
-    // }
   }
 
   pub async fn task_revoke(&self, site_id: String, ip_address: &str) -> Result<bool, Error> {
@@ -264,9 +258,7 @@ impl MasterRpc {
   pub fn new(master_url: String) -> Result<Self, Error> {
     Ok(Self {
       master_url,
-      api_client: reqwest::ClientBuilder::new()
-        .timeout(Duration::from_secs(3))
-        .build()?,
+      api_client: build_base_client_builder()?,
     })
   }
 

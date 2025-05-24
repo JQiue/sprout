@@ -9,6 +9,7 @@ mod helper;
 mod middlewares;
 mod migration;
 mod repository;
+mod timing;
 mod traits;
 mod types;
 

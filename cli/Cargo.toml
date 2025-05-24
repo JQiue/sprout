@@ -2,7 +2,11 @@
 name = "cli"
 version.workspace = true
 edition.workspace = true
-description = "The command line interface for user-facing commands."
+description = "CLI for user interface"
+
+[[bin]]
+name = "pupup-cli"
+path = "src/main.rs"
 
 [dependencies]
 rpc = { workspace = true }

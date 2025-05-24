@@ -14,6 +14,10 @@ pub struct AgentRepository<'a> {
 }
 
 impl AgentRepository<'_> {
+  pub async fn create_agent(&self, agent: agent::ActiveModel) -> Result<agent::Model, DbErr> {
+    agent.insert(self.db).await
+  }
+
   pub async fn get_avaliable_agent(&self) -> Result<Option<agent::Model>, DbErr> {
     agent::Entity::find()
       .filter(agent::Column::Status.eq(AgentStatus::Online))
@@ -21,9 +25,9 @@ impl AgentRepository<'_> {
       .await
   }
 
-  // pub async fn get_agents(&self) -> Result<Vec<agent::Model>, DbErr> {
-  //   agent::Entity::find().all(self.db).await
-  // }
+  pub async fn get_agents(&self) -> Result<Vec<agent::Model>, DbErr> {
+    agent::Entity::find().all(self.db).await
+  }
 
   pub async fn get_agent(&self, id: u32) -> Result<Option<agent::Model>, DbErr> {
     agent::Entity::find()
