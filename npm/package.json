@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "",
   "bin": {
-    "pupup": "./index.js"
+    "pupup": "index.js"
   },
   "license": "ISC"
 }
