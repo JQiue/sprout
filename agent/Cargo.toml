@@ -2,6 +2,8 @@
 name = "agent"
 version.workspace = true
 edition.workspace = true
+publish.workspace = true
+description = "Pupup agent"
 
 [[bin]]
 name = "pupup-agent"
