@@ -54,3 +54,5 @@ strip = true
 
 [workspace.metadata.release]
 push = false
+pre-release-hook = ["npm"]
+tag-name = "v{version}"
