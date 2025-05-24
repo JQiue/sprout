@@ -291,7 +291,7 @@ checksum = "512761e0bb2578dd7380c6baaa0f4ce03e84f95e960231d1dec8bf4d7d6e2627"
 
 [[package]]
 name = "agent"
-version = "0.0.12"
+version = "0.0.13"
 dependencies = [
  "actix-cors",
  "actix-multipart",
@@ -795,7 +795,7 @@ checksum = "f46ad14479a25103f283c0f10005961cf086d8dc42205bb44c46ac563475dca6"
 
 [[package]]
 name = "cli"
-version = "0.0.12"
+version = "0.0.13"
 dependencies = [
  "aho-corasick",
  "clap",
@@ -852,7 +852,7 @@ dependencies = [
 
 [[package]]
 name = "common"
-version = "0.0.12"
+version = "0.0.13"
 dependencies = [
  "entity",
  "serde",
@@ -1204,7 +1204,7 @@ dependencies = [
 
 [[package]]
 name = "entity"
-version = "0.0.12"
+version = "0.0.13"
 dependencies = [
  "derive_more 2.0.1",
  "sea-orm",
@@ -2089,7 +2089,7 @@ checksum = "13dc2df351e3202783a1fe0d44375f7295ffb4049267b0f3018346dc122a1d94"
 
 [[package]]
 name = "master"
-version = "0.0.12"
+version = "0.0.13"
 dependencies = [
  "actix-cors",
  "actix-web",
@@ -2137,7 +2137,7 @@ checksum = "78ca9ab1a0babb1e7d5695e3530886289c18cf2f87ec19a575a0abdce112e3a3"
 
 [[package]]
 name = "migration"
-version = "0.0.12"
+version = "0.0.13"
 dependencies = [
  "sea-orm-migration",
  "tokio",
@@ -2929,7 +2929,7 @@ dependencies = [
 
 [[package]]
 name = "rpc"
-version = "0.0.12"
+version = "0.0.13"
 dependencies = [
  "cloudflare",
  "common",
